@@ -1,6 +1,6 @@
 # Entwicklungsstand 2026-09-14
 
-Dieser Ordner sichert den auf der Testbox bestätigten Post-r18-Stand.
+Dieser Ordner sichert den auf der Testbox bestätigten bzw. aktuell getesteten Entwicklungsstand rund um r19.
 
 ## Enthalten
 
@@ -34,16 +34,27 @@ Patcher für das Provider-Player-Routing:
 - legt `ProviderPlayerBridge.py` an
 - enthält Syntax-/Readback-Prüfungen und Backups
 
+### `MediaPlugins2026_LATEST_POSTERFIX1_patcher.py`
+
+Post-r19-Fix für leere Poster in `Neu hinzugefügt`:
+
+- Emby Season/Episode: verwendet `PrimaryImageItemId` bzw. `SeriesId` als Poster-Fallback
+- Emby-Einträge ohne irgendein verwertbares Poster werden übersprungen
+- Plex: wenn `thumb`, `parentThumb` und `grandparentThumb` fehlen, wird das Poster aus `grandparentRatingKey`/`parentRatingKey` abgeleitet
+- der Snapshot-Reuse-Pfad startet nach dem Live-Tausch wieder den Poster-Prefetch
+- legt Backups von `jellyfin_client.py`, `plex_client.py` und `HomeScreen.py` an
+- Syntaxprüfung der drei gepatchten Dateien wurde auf der Testbox ohne Fehler ausgeführt
+
 ## Bestätigter Teststand
 
 Auf der Box bestätigt:
 
 - Serverstatus zeigt Emby/Plex online und Jellyfin nicht aktiv.
-- Plex liefert Home-`Neu hinzugefügt` weiterhin korrekt.
-- Emby-`Items/Latest` lieferte 0; dafür wurde der DateCreated-Fallback ergänzt.
+- Emby-`Items/Latest` lieferte 0; der DateCreated-Fallback liefert wieder neue Inhalte.
 - Nach Wiederherstellung der Provider-Bridge startet Emby wieder den EmbyFlowE2-Player.
-- Der finale Provider-Restore-Patcher wurde erfolgreich ausgeführt.
+- r19 wurde als stabile IPK veröffentlicht und vom integrierten Updater erkannt.
+- `LATEST_POSTERFIX1` wurde erfolgreich angewendet; die anschließende Python-Syntaxprüfung war fehlerfrei.
 
 ## Release-Status
 
-Diese Dateien dokumentieren den **Entwicklungsstand nach 2026.1-r18**. Sie sind noch nicht Bestandteil einer neuen Release-IPK. `update.json` bleibt deshalb unverändert auf `2026.1-r18`.
+`2026.1-r19` ist der aktuelle stabile Release. `LATEST_POSTERFIX1` liegt zunächst als Post-r19-Entwicklungsfix in diesem Ordner. `update.json` bleibt bis zu einem bestätigten Folge-Release auf `2026.1-r19`.

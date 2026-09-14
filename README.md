@@ -1,29 +1,23 @@
-# Bestätigte Änderungen nach 2026.1-r17
+# Media Plugins 2026
 
-Stand: 14.09.2026
+Eine gemeinsame Enigma2-Oberfläche für Emby, Jellyfin und Plex.
 
-Dieses Archiv enthält ausschließlich Änderungen, die nach der letzten veröffentlichten stabilen IPK `2026.1-r17` erfolgreich getestet bzw. auf der Box bestätigt wurden.
+## Funktionen
 
-## Erfolgreich bestätigt
+- Unified Continue / Weiterschauen über mehrere Provider
+- Emby-, Jellyfin- und Plex-Unterstützung
+- Providerübergreifende Verfügbarkeit
+- Favoriten und zuletzt hinzugefügte Inhalte
+- Moderne Suche mit Versionsanzeige
+- Plex Serien-, Staffel- und Episodenansicht
+- Serverwechsel direkt aus der Oberfläche
+- Lokaler Home-Snapshot für schnellen Start
+- Integrierter Update-Mechanismus
 
-- Home-Uhr synchronisiert mit der Boxzeit
-- finaler Home-Navigationsfluss inkl. Cross-Row-Navigation und Filterpfeilen
-- zweizeilige Titel und längere Titelanzeige
-- funktionierender Serverwechsel
-- Plex Serien-/Staffelbrowser und finale Episoden-UI
-- Disney-artige Suche inkl. Z-Order-, Detail- und Beschreibungsfixes
-- providerübergreifende Versionen in der Suche
-- Unified Continue für Emby/Plex mit Multi-Alias- und Laufzeit-Matching
-- korrekte Auswahl des Resume-/Fortschrittsstands
-- saubere LastPlayed-Anzeige ohne rohe Zahlenwerte
-- providerübergreifende Verfügbarkeits-Erkennung
-- Quellenanzeige wie `Emby · Plex · 2 Versionen`
+## Paket
 
-## Bewusst noch nicht als bestätigt enthalten
+`enigma2-plugin-extensions-mediaplugins2026`
 
-- 60-Minuten-Autorefresh
-- getrennte Aktualisierungszeiten für Emby/Jellyfin/Plex
+## Aktueller Stand
 
-Diese beiden Punkte wurden danach gebaut, waren zum Zeitpunkt dieses GitHub-Snapshots aber noch nicht ausdrücklich auf der Box bestätigt. Ebenfalls ausgeschlossen sind abgebrochene/experimentelle Patches sowie nicht bestätigte Search-Autosave-/Availability-Width-/Player-Versuche.
-
-`update.json` bleibt absichtlich auf `2026.1-r17`, bis daraus eine konsolidierte IPK gebaut und als kompletter Stand getestet wurde.
+Der öffentliche stabile Update-Kanal bleibt vorerst auf `2026.1-r17`, bis `2026.1-r18` als Media Plugins 2026 auf der Box vollständig bestätigt und anschließend veröffentlicht wurde.

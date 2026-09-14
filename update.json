@@ -1,16 +1,18 @@
 {
-  "version": "2026.1-r17",
-  "build": 2026091301,
+  "version": "2026.1-r18",
+  "build": 2026091401,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/infuseMedia2026-Updates/releases/download/2026.1-r17/enigma2-plugin-extensions-infusemedia2026_2026.1-r17_all.1.ipk",
-  "sha256": "f8991cd7d1e97bd87aae2ac40f61ba4720f164bc7725c01dcf173282113972ca",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r18/enigma2-plugin-extensions-mediaplugins2026_2026.1-r18_all.ipk",
+  "sha256": "2c6177b1e197b5e3475db42fa41ccb963dca8822a9be72395b68bbcaed6e8139",
   "artifact_type": "ipk",
-  "package": "enigma2-plugin-extensions-infusemedia2026",
+  "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Schneller HomeScreen mit lokalem Snapshot",
-    "Kompakter Detailbereich",
-    "Integrierter Serverwechsel",
-    "EmbyFlowE2, Jellyfin und Plex2026",
-    "Verbesserungen für Tester und öffentliche Installation"
+    "Neues Media Plugins 2026 Branding und modernisierte Einstellungen",
+    "Integrierte GitHub Update-Pruefung",
+    "Unified Continue fuer Emby, Jellyfin und Plex",
+    "Provideruebergreifende Verfuegbarkeit und Versionsanzeige",
+    "Optimierte Suche und Detailanzeige",
+    "Plex Serien-, Staffel- und Episodenansicht",
+    "Schneller Home-Start und bestaetigte Navigation"
   ]
 }

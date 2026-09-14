@@ -1,5 +1,18 @@
 # Changelog
 
+## Entwicklungs-Hotfix 2026-09-14 (nach 2026.1-r18)
+
+Auf der Testbox bestätigter Entwicklungsstand nach dem r18-Release:
+
+- **Server-Health im Home-Screen**: Emby/Jellyfin/Plex zeigen `Online`, `Login nötig`, `Offline`, `Fehler`, `Prüfe` oder `Nicht aktiv`, sowohl in „Zu Server wechseln“ als auch in der unteren Serverstatus-Zeile.
+- **Emby „Neu hinzugefügt“ Fallback**: bleibt `/Items/Latest` leer oder schlägt fehl, wird auf eine rekursive `DateCreated`-Abfrage für Movie/Series/Season/Episode ausgewichen.
+- **Provider-Player-Routing wiederhergestellt**: Emby startet wieder den eigenen **EmbyFlowE2-Player**, Plex den **Plex2026-Player**; Jellyfin bleibt auf dem internen MediaPlugins-Player.
+- Der Player-Routing-Fix wurde nach dem Server-Health-Umbau erneut auf der Box bestätigt.
+
+Die zugehörigen, getesteten Entwicklungsdateien liegen unter `development/2026-09-14/`.
+
+**Wichtig:** Dieser Entwicklungsstand ist noch **nicht** als neue IPK veröffentlicht. `update.json` bleibt deshalb unverändert auf `2026.1-r18`.
+
 ## 2026.1-r18
 
 Erster konsolidierter Release unter dem Namen **Media Plugins 2026**.

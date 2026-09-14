@@ -1,5 +1,15 @@
 # Changelog
 
+## Entwicklungs-Hotfix nach 2026.1-r19
+
+- **Leere Poster in „Neu hinzugefügt“**: Emby Season/Episode verwenden jetzt Serien-/PrimaryImageItem-Poster als Fallback.
+- Emby-Einträge ohne irgendein verwertbares Poster werden aus der Latest-Reihe ausgelassen.
+- Plex kann fehlende `thumb`/`parentThumb`/`grandparentThumb` über `grandparentRatingKey` bzw. `parentRatingKey` auflösen.
+- Der Home-Snapshot-Reuse startet nach dem Live-Item-Tausch wieder den Poster-Prefetch.
+- Patcher und Backups wurden auf der Testbox erfolgreich ausgeführt; die Syntaxprüfung von `HomeScreen.py`, `jellyfin_client.py` und `plex_client.py` war fehlerfrei.
+
+Der Fix liegt unter `development/2026-09-14/MediaPlugins2026_LATEST_POSTERFIX1_patcher.py`. Der stabile Update-Kanal bleibt zunächst auf `2026.1-r19`.
+
 ## 2026.1-r19
 
 Stabiler Release des auf der Testbox bestätigten Post-r18-Stands.

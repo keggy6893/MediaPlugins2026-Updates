@@ -1,0 +1,217 @@
+name: Build and publish r19
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-r19.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 2026.1-r19
+      BUILD: '2026091402'
+      PACKAGE: enigma2-plugin-extensions-mediaplugins2026
+      R18_SHA256: 2c6177b1e197b5e3475db42fa41ccb963dca8822a9be72395b68bbcaed6e8139
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build r19 from confirmed r18
+        shell: bash
+        run: |
+          set -euo pipefail
+          R18="${PACKAGE}_2026.1-r18_all.ipk"
+          OUT="${PACKAGE}_${VERSION}_all.ipk"
+          ROOT="$PWD/build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+
+          curl -fL \
+            "https://github.com/${GITHUB_REPOSITORY}/releases/download/2026.1-r18/${R18}" \
+            -o "$R18"
+          echo "${R18_SHA256}  ${R18}" | sha256sum -c -
+
+          rm -rf build
+          mkdir -p build/work build/control build/data
+          cd build/work
+          ar x "../../${R18}"
+          cd ../control
+          tar -xzf ../work/control.tar.gz
+          cd ../data
+          tar -xzf ../work/data.tar.gz
+          cd "$GITHUB_WORKSPACE"
+
+          python development/2026-09-14/MediaPlugins2026_HOME_SERVERHEALTH1_patcher.py "$ROOT"
+          python development/2026-09-14/MediaPlugins2026_PROVIDERPLAYER_RESTORE1_FIXED.py "$ROOT"
+          python development/2026-09-14/MediaPlugins2026_EMBY_LATEST_FALLBACK1_patcher.py "$ROOT"
+
+          find "$ROOT" -type f \( -name '*.before_*' -o -name '*.pyc' -o -name '*~' \) -delete
+          find "$ROOT" -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026')
+          p = root / 'version.py'
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('PLUGIN_VERSION = "2026.1-r18"', 'PLUGIN_VERSION = "2026.1-r19"')
+          s = s.replace('PLUGIN_UPDATE_BUILD = 2026091401', 'PLUGIN_UPDATE_BUILD = 2026091402')
+          old = '    "Optimierte Suche und Detailanzeige"\n'
+          new = ('    "Optimierte Suche und Detailanzeige|"\n'
+                 '    "Server-Health im Home-Screen|"\n'
+                 '    "Emby Neu-hinzugefuegt Fallback|"\n'
+                 '    "Provider-Player-Routing EmbyFlowE2/Plex2026"\n')
+          if old not in s:
+              raise SystemExit('version.py changelog anchor fehlt')
+          s = s.replace(old, new, 1)
+          if 'PLUGIN_VERSION = "2026.1-r19"' not in s:
+              raise SystemExit('version.py Version konnte nicht gesetzt werden')
+          p.write_text(s, encoding='utf-8')
+
+          c = Path('build/control/control')
+          cs = c.read_text(encoding='utf-8')
+          cs = cs.replace('Version: 2026.1-r18', 'Version: 2026.1-r19')
+          cs = cs.replace('Release r18:', 'Release r19:')
+          cs = cs.replace(
+              ' Plex Serien-/Episodenansicht, neues Branding sowie modernisierte Einstellungen mit GitHub Update.',
+              ' Plex Serien-/Episodenansicht, Server-Health im Home-Screen, Emby-Latest-Fallback,\n Provider-Player-Routing, neues Branding sowie modernisierte Einstellungen mit GitHub Update.'
+          )
+          if 'Version: 2026.1-r19' not in cs:
+              raise SystemExit('control Version konnte nicht gesetzt werden')
+          c.write_text(cs, encoding='utf-8')
+
+          checked = 0
+          for py in root.rglob('*.py'):
+              compile(py.read_text(encoding='utf-8'), str(py), 'exec')
+              checked += 1
+          print('Python-Dateien geprüft:', checked)
+
+          home = (root / 'screens/HomeScreen.py').read_text(encoding='utf-8')
+          detail = (root / 'screens/MediaDetail.py').read_text(encoding='utf-8')
+          bridge = (root / 'screens/ProviderPlayerBridge.py').read_text(encoding='utf-8')
+          jf = (root / 'backends/jellyfin_client.py').read_text(encoding='utf-8')
+          required = {
+              'Home Server-Health': '_healthStatusText' in home and '_classifyServerFailure' in home,
+              'Home Provider-Bridge': 'open_provider_player' in home,
+              'Detail Provider-Bridge': 'open_provider_player' in detail,
+              'EmbyFlowE2 Bridge': 'Plugins.Extensions.EmbyFlowE2' in bridge and '_open_embyflow_player_now' in bridge,
+              'Plex2026 Bridge': 'Plugins.Extensions.Plex2026Phase1' in bridge,
+              'Emby Latest Fallback': 'MEDIAPLUGINS2026_EMBY_LATEST_FALLBACK1' in jf,
+          }
+          missing = [name for name, ok in required.items() if not ok]
+          if missing:
+              raise SystemExit('r19 Verifikation fehlgeschlagen: %r' % missing)
+
+          bad = [p for p in root.rglob('*') if p.is_file() and (
+              p.suffix == '.pyc' or '.before_' in p.name or p.name.endswith('.bak')
+          )]
+          if bad:
+              raise SystemExit('Paket-Hygiene fehlgeschlagen: %r' % [str(x) for x in bad])
+          PY
+
+          printf '2.0\n' > build/debian-binary
+          GZIP=-n tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          GZIP=-n tar --owner=0 --group=0 -czf build/data.tar.gz -C build/data .
+          rm -f "$OUT"
+          ar r "$OUT" build/debian-binary build/control.tar.gz build/data.tar.gz
+
+          SHA="$(sha256sum "$OUT" | awk '{print $1}')"
+          echo "R19_SHA256=$SHA" >> "$GITHUB_ENV"
+          echo "R19_IPK=$OUT" >> "$GITHUB_ENV"
+          echo "Built $OUT sha256=$SHA"
+
+      - name: Verify packaged IPK
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf verify
+          mkdir -p verify/control verify/data
+          cd verify
+          ar x "../${R19_IPK}"
+          tar -xzf control.tar.gz -C control
+          tar -xzf data.tar.gz -C data
+          grep -q '^Package: enigma2-plugin-extensions-mediaplugins2026$' control/control
+          grep -q '^Version: 2026.1-r19$' control/control
+          grep -q 'PLUGIN_VERSION = "2026.1-r19"' data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026/version.py
+          test -f data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026/screens/ProviderPlayerBridge.py
+          ! find data -type f -name '*.pyc' | grep -q .
+          ! find data -type f -name '*.before_*' | grep -q .
+
+      - name: Publish GitHub release asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES=$'Media Plugins 2026 — 2026.1-r19\n\nBestätigter Post-r18-Stand:\n\n- Server-Health für Emby/Jellyfin/Plex im Home-Screen\n- Emby „Neu hinzugefügt“-Fallback über DateCreated\n- Provider-Player-Routing wiederhergestellt: Emby → EmbyFlowE2, Plex → Plex2026\n- bestehender r18-Funktionsumfang bleibt erhalten\n- Paket ohne Backup-/pyc-/Runtime-Dateien\n\nSHA256: '"${R19_SHA256}"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" "$R19_IPK" --clobber
+          else
+            gh release create "$VERSION" "$R19_IPK" \
+              --title "Media Plugins 2026 — $VERSION" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Publish stable r19 manifest and docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import os
+
+          version = os.environ['VERSION']
+          build = int(os.environ['BUILD'])
+          package = os.environ['PACKAGE']
+          sha = os.environ['R19_SHA256']
+          filename = os.environ['R19_IPK']
+          repo = os.environ['GITHUB_REPOSITORY']
+          download = f'https://github.com/{repo}/releases/download/{version}/{filename}'
+
+          manifest = {
+              'version': version,
+              'build': build,
+              'channel': 'stable',
+              'download': download,
+              'sha256': sha,
+              'artifact_type': 'ipk',
+              'package': package,
+              'changelog': [
+                  'Server-Health-Status fuer Emby, Jellyfin und Plex',
+                  'Emby Neu-hinzugefuegt Fallback bei leerem Items/Latest',
+                  'Emby startet wieder den eigenen EmbyFlowE2-Player',
+                  'Plex startet wieder den eigenen Plex2026-Player',
+                  'Bestehender r18 Funktionsumfang bleibt erhalten',
+              ],
+          }
+          Path('update.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          readme = Path('README.md').read_text(encoding='utf-8')
+          start = readme.find('## Aktueller Entwicklungsstand')
+          end = readme.find('## Paket', start)
+          if start < 0 or end < 0:
+              raise SystemExit('README Entwicklungsabschnitt nicht gefunden')
+          release_section = f'''## 2026.1-r19\n\nDer stabile r19-Stand ergänzt r18 um:\n\n- Server-Health-Status für Emby/Jellyfin/Plex im Home-Screen\n- Emby-Fallback für „Neu hinzugefügt“, falls `/Items/Latest` leer bleibt\n- Provider-Player-Routing: Emby → EmbyFlowE2, Plex → Plex2026\n\nRelease-IPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
+          readme = readme[:start] + release_section + readme[end:]
+          Path('README.md').write_text(readme, encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md').read_text(encoding='utf-8')
+          old_start = changelog.find('## Entwicklungs-Hotfix 2026-09-14')
+          r18 = changelog.find('## 2026.1-r18')
+          if old_start < 0 or r18 < 0:
+              raise SystemExit('CHANGELOG Entwicklungsabschnitt nicht gefunden')
+          r19 = f'''## 2026.1-r19\n\nStabiler Release des auf der Testbox bestätigten Post-r18-Stands.\n\n### Neu und bestätigt\n\n- **Server-Health im Home-Screen**: Emby/Jellyfin/Plex unterscheiden Online, Login nötig, Offline, Fehler, Prüfe und Nicht aktiv.\n- **Emby „Neu hinzugefügt“ Fallback**: bei leerem/fehlerhaftem `/Items/Latest` wird rekursiv nach `DateCreated` abgefragt.\n- **Provider-Player-Routing**: Emby startet den EmbyFlowE2-Player, Plex den Plex2026-Player; Jellyfin bleibt intern.\n- Paket-Hygiene erneut geprüft: keine Backups, `.pyc` oder Runtime-Dateien.\n\nIPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
+          changelog = changelog[:old_start] + r19 + changelog[r18:]
+          Path('CHANGELOG.md').write_text(changelog, encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add update.json README.md CHANGELOG.md
+          git commit -m 'Publish Media Plugins 2026 r19 stable manifest'
+          git push origin HEAD:main

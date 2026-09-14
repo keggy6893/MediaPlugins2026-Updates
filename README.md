@@ -15,17 +15,17 @@ Eine gemeinsame Enigma2-Oberfläche für Emby, Jellyfin und Plex.
 - Integrierter GitHub-Update-Bereich
 - Eigenes Media Plugins 2026 Branding und Logo
 
-## Aktueller Entwicklungsstand
+## 2026.1-r19
 
-Der auf der Testbox bestätigte Stand vom **14.09.2026** ergänzt r18 um:
+Der stabile r19-Stand ergänzt r18 um:
 
 - Server-Health-Status für Emby/Jellyfin/Plex im Home-Screen
 - Emby-Fallback für „Neu hinzugefügt“, falls `/Items/Latest` leer bleibt
-- wiederhergestelltes Provider-Player-Routing: Emby → EmbyFlowE2, Plex → Plex2026
+- Provider-Player-Routing: Emby → EmbyFlowE2, Plex → Plex2026
 
-Die getesteten Entwicklungsdateien liegen unter [`development/2026-09-14/`](development/2026-09-14/README.md).
+Release-IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r19_all.ipk`
 
-Dieser Stand ist noch **keine neue Release-IPK**. Der stabile Update-Kanal in `update.json` bleibt deshalb auf `2026.1-r18`.
+SHA256: `e7c42839b3bcf96d922cd9b9f463517751619c2fe96c84aa50fc31a4d0e63edb`
 
 ## Paket
 

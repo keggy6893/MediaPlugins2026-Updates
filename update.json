@@ -1,18 +1,16 @@
 {
-  "version": "2026.1-r18",
-  "build": 2026091401,
+  "version": "2026.1-r19",
+  "build": 2026091402,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r18/enigma2-plugin-extensions-mediaplugins2026_2026.1-r18_all.ipk",
-  "sha256": "2c6177b1e197b5e3475db42fa41ccb963dca8822a9be72395b68bbcaed6e8139",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r19/enigma2-plugin-extensions-mediaplugins2026_2026.1-r19_all.ipk",
+  "sha256": "e7c42839b3bcf96d922cd9b9f463517751619c2fe96c84aa50fc31a4d0e63edb",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Neues Media Plugins 2026 Branding und modernisierte Einstellungen",
-    "Integrierte GitHub Update-Pruefung",
-    "Unified Continue fuer Emby, Jellyfin und Plex",
-    "Provideruebergreifende Verfuegbarkeit und Versionsanzeige",
-    "Optimierte Suche und Detailanzeige",
-    "Plex Serien-, Staffel- und Episodenansicht",
-    "Schneller Home-Start und bestaetigte Navigation"
+    "Server-Health-Status fuer Emby, Jellyfin und Plex",
+    "Emby Neu-hinzugefuegt Fallback bei leerem Items/Latest",
+    "Emby startet wieder den eigenen EmbyFlowE2-Player",
+    "Plex startet wieder den eigenen Plex2026-Player",
+    "Bestehender r18 Funktionsumfang bleibt erhalten"
   ]
 }

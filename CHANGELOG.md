@@ -1,17 +1,19 @@
 # Changelog
 
-## Entwicklungs-Hotfix 2026-09-14 (nach 2026.1-r18)
+## 2026.1-r19
 
-Auf der Testbox bestätigter Entwicklungsstand nach dem r18-Release:
+Stabiler Release des auf der Testbox bestätigten Post-r18-Stands.
 
-- **Server-Health im Home-Screen**: Emby/Jellyfin/Plex zeigen `Online`, `Login nötig`, `Offline`, `Fehler`, `Prüfe` oder `Nicht aktiv`, sowohl in „Zu Server wechseln“ als auch in der unteren Serverstatus-Zeile.
-- **Emby „Neu hinzugefügt“ Fallback**: bleibt `/Items/Latest` leer oder schlägt fehl, wird auf eine rekursive `DateCreated`-Abfrage für Movie/Series/Season/Episode ausgewichen.
-- **Provider-Player-Routing wiederhergestellt**: Emby startet wieder den eigenen **EmbyFlowE2-Player**, Plex den **Plex2026-Player**; Jellyfin bleibt auf dem internen MediaPlugins-Player.
-- Der Player-Routing-Fix wurde nach dem Server-Health-Umbau erneut auf der Box bestätigt.
+### Neu und bestätigt
 
-Die zugehörigen, getesteten Entwicklungsdateien liegen unter `development/2026-09-14/`.
+- **Server-Health im Home-Screen**: Emby/Jellyfin/Plex unterscheiden Online, Login nötig, Offline, Fehler, Prüfe und Nicht aktiv.
+- **Emby „Neu hinzugefügt“ Fallback**: bei leerem/fehlerhaftem `/Items/Latest` wird rekursiv nach `DateCreated` abgefragt.
+- **Provider-Player-Routing**: Emby startet den EmbyFlowE2-Player, Plex den Plex2026-Player; Jellyfin bleibt intern.
+- Paket-Hygiene erneut geprüft: keine Backups, `.pyc` oder Runtime-Dateien.
 
-**Wichtig:** Dieser Entwicklungsstand ist noch **nicht** als neue IPK veröffentlicht. `update.json` bleibt deshalb unverändert auf `2026.1-r18`.
+IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r19_all.ipk`
+
+SHA256: `e7c42839b3bcf96d922cd9b9f463517751619c2fe96c84aa50fc31a4d0e63edb`
 
 ## 2026.1-r18
 

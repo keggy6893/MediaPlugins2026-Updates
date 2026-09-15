@@ -1,5 +1,21 @@
 # Changelog
 
+## Entwicklungs-Hotfix nach 2026.1-r20 – Poster-Pipeline
+
+- Poster-Pipeline gegen Cold-Boot-/Snapshot-Probleme gehärtet.
+- persistenter Poster-Cache ausschließlich intern unter `/etc/enigma2/mediaplugins2026/poster_cache`.
+- keine HDD-/USB-Abhängigkeit; harte Grenzen: 12 MiB, 120 Dateien, 14 Tage.
+- Cache-Dateien werden vor Verwendung als echte Bilddaten validiert.
+- atomische Cache-Schreibvorgänge und ein begrenzter Retry für transiente Downloadfehler.
+- Schutz vor stale asynchronen Poster-Callbacks.
+- Cold-Boot-Reparaturrunden für noch nicht aufgelöste sichtbare Poster.
+- `image_cache = ImageCache()` als Modul-Singleton wiederhergestellt und `_stable_cache_key()` wieder als `@staticmethod` validiert.
+- Preview-/Ambient-Callback-State im HomeScreen defensiv initialisiert.
+- auf der Testbox nach Reboot bestätigt: `POSTER_REPAIR round=1 ready=20 total=20`, Poster aus lokalem Cache sichtbar und interner Cache aktiv.
+- autoritativer Finalizer: `development/2026-09-15/MediaPlugins2026_POSTER_PIPELINE_FINALIZE1_patcher.py`.
+- Dokumentation: `development/2026-09-15/README.md`.
+- stabiler Update-Kanal bleibt unverändert; noch kein neuer Release.
+
 ## Entwicklungs-Hotfix nach 2026.1-r19
 
 ### Home / Poster

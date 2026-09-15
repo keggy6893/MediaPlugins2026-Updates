@@ -53,6 +53,25 @@ Historische Zwischenfixes des Dialog-Debuggings liegen unter `development/2026-0
 
 Der stabile Update-Kanal bleibt zunächst auf `2026.1-r19`; `update.json` wird erst mit einem bewusst gebauten Folge-Release angehoben.
 
+## 2026.1-r20
+
+Stabiler Release des auf der Testbox bestätigten Post-r19-Stands.
+
+### Neu und bestätigt
+
+- leere Poster in „Neu hinzugefügt“ für Emby/Plex behoben
+- tägliche Auto-Sicherung mit 7-Tage-Rotation und privaten Dateirechten
+- sichtbare Sicherungen-Karte mit Status und Verlauf
+- Emby/Plex Provider-Icons in Serverkarten und Detailbereich
+- zentraler Dialog „Sicherung & Wiederherstellung“
+- GRÜN: heutige Sicherung aktualisieren, GELB: Export, BLAU: Import/Restore, ROT: Abbrechen
+- Import aus dem Settings-Hauptscreen entfernt und logisch in den Sicherungsdialog verschoben
+- Paket-Hygiene geprüft: keine Backups oder `.pyc`-Dateien
+
+IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r20_all.ipk`
+
+SHA256: `79691535ad537029fed97331eb7c1c94cbd02256d1840c60ac76bffe41df611f`
+
 ## 2026.1-r19
 
 Stabiler Release des auf der Testbox bestätigten Post-r18-Stands.

@@ -15,6 +15,20 @@ Eine gemeinsame Enigma2-Oberfläche für Emby, Jellyfin und Plex.
 - Integrierter GitHub-Update-Bereich
 - Eigenes Media Plugins 2026 Branding und Logo
 
+## 2026.1-r20
+
+Der stabile r20-Stand ergänzt r19 um:
+
+- Poster-Fallbacks für Emby/Plex in „Neu hinzugefügt“
+- automatische tägliche Konfigurationssicherung mit 7-Tage-Rotation
+- sichtbare Sicherungen-Karte im Settings-Screen
+- Emby/Plex Provider-Icons
+- zentralen Dialog **Sicherung & Wiederherstellung** mit Sichern, Export und Import
+
+Release-IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r20_all.ipk`
+
+SHA256: `79691535ad537029fed97331eb7c1c94cbd02256d1840c60ac76bffe41df611f`
+
 ## 2026.1-r19
 
 Der stabile r19-Stand ergänzt r18 um:

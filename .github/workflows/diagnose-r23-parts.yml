@@ -1,0 +1,36 @@
+name: Diagnose r23 payload parts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-r23-parts.yml'
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect payload parts
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          parts=[Path(f'development/2026-09-15/r23_core_parts/part0{i}.b64').read_text().strip() for i in range(3)]
+          needles=['eNpMmseurOqWpfvnKY5UjZQKXeFdStkI','mXXhyl+i9rQ2','I8Dcd7XE/muW','KaHkbim+HLiS']
+          for i,p in enumerate(parts):
+              print('PART',i,'LEN',len(p),'START',p[:40],'END',p[-40:])
+              for n in needles:
+                  print(' find',n[:8],p.find(n))
+          def overlap(a,b):
+              maxn=min(len(a),len(b))
+              for n in range(maxn,0,-1):
+                  if a[-n:]==b[:n]: return n
+              return 0
+          for i,a in enumerate(parts):
+              for j,b in enumerate(parts):
+                  if i!=j: print('OVERLAP',i,'->',j,overlap(a,b))
+          joined=''.join(parts)
+          print('JOIN LEN',len(joined),'eNpM',joined.find('eNpM'))
+          PY

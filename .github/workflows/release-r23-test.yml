@@ -1,0 +1,228 @@
+name: Build and publish r23 test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-r23-test.yml'
+      - 'development/2026-09-15/r23_test_core_parts/**'
+      - 'development/2026-09-15/MediaPlugins2026_HOME_PROVIDER_COLORKEYS1_patcher.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-test:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 2026.1-r23-test1
+      BUILD: '2026091505'
+      PACKAGE: enigma2-plugin-extensions-mediaplugins2026
+      R22_SHA256: 1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build r23 test from stable r22
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          R22="${PACKAGE}_2026.1-r22_all.ipk"
+          OUT="${PACKAGE}_${VERSION}_all.ipk"
+          ROOT="$PWD/build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+
+          curl -fL "https://github.com/${GITHUB_REPOSITORY}/releases/download/2026.1-r22/${R22}" -o "${R22}"
+          echo "${R22_SHA256}  ${R22}" | sha256sum -c -
+
+          rm -rf build verify
+          mkdir -p build/work build/control build/data
+          cd build/work
+          ar x "../../${R22}"
+          cd ../control
+          tar -xzf ../work/control.tar.gz
+          cd ../data
+          tar -xzf ../work/data.tar.gz
+          cd "$GITHUB_WORKSPACE"
+
+          cat development/2026-09-15/r23_test_core_parts/part*.b64 | tr -d '\n\r' > /tmp/mediaplugins2026_r23_test_core.b64
+          python - <<'PY'
+          import base64, hashlib, zlib
+          from pathlib import Path
+          payload = Path('/tmp/mediaplugins2026_r23_test_core.b64').read_text(encoding='ascii').strip()
+          raw = zlib.decompress(base64.b64decode(payload))
+          sha = hashlib.sha256(raw).hexdigest()
+          Path('/tmp/mediaplugins2026_r23_test_core.py').write_bytes(raw)
+          print('r23 test core bytes:', len(raw), 'sha256=', sha)
+          PY
+
+          python /tmp/mediaplugins2026_r23_test_core.py "$ROOT"
+          python development/2026-09-15/MediaPlugins2026_HOME_PROVIDER_COLORKEYS1_patcher.py "$ROOT"
+
+          find "$ROOT" -type f \( -name '*.before_*' -o -name '*.pyc' -o -name '*.bak' -o -name '*~' \) -delete
+          find "$ROOT" -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+          python - <<'PY'
+          from pathlib import Path
+          import os, re
+
+          version = os.environ['VERSION']
+          build = os.environ['BUILD']
+          root = Path('build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026')
+
+          version_py = root / 'version.py'
+          s = version_py.read_text(encoding='utf-8')
+          s, n1 = re.subn(r'PLUGIN_VERSION\s*=\s*"[^"]+"', f'PLUGIN_VERSION = "{version}"', s, count=1)
+          s, n2 = re.subn(r'PLUGIN_UPDATE_BUILD\s*=\s*\d+', f'PLUGIN_UPDATE_BUILD = {build}', s, count=1)
+          if n1 != 1 or n2 != 1:
+              raise SystemExit('version.py Version/Build konnte nicht gesetzt werden')
+          version_py.write_text(s, encoding='utf-8')
+
+          control = Path('build/control/control')
+          cs = control.read_text(encoding='utf-8')
+          cs, n = re.subn(r'(?m)^Version:\s*\S+', f'Version: {version}', cs, count=1)
+          if n != 1:
+              raise SystemExit('control Version konnte nicht gesetzt werden')
+          control.write_text(cs, encoding='utf-8')
+
+          for py in root.rglob('*.py'):
+              compile(py.read_text(encoding='utf-8'), str(py), 'exec')
+
+          home = (root / 'screens/HomeScreen.py').read_text(encoding='utf-8')
+          hub = (root / 'screens/ServerFolderBrowser.py').read_text(encoding='utf-8')
+          library = (root / 'screens/LibraryBrowser.py').read_text(encoding='utf-8')
+          settings = (root / 'screens/Settings.py').read_text(encoding='utf-8')
+          jelly = (root / 'backends/jellyfin_client.py').read_text(encoding='utf-8')
+          plex = (root / 'backends/plex_client.py').read_text(encoding='utf-8')
+          cache = (root / 'utils/image_cache.py').read_text(encoding='utf-8')
+          http = (root / 'backends/http_helper.py').read_text(encoding='utf-8')
+
+          required = {
+              'r22 Settings Crashfix': 'MEDIAPLUGINS2026_SETTINGS_CRASHFIX1' in settings,
+              'r21 Poster Home': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' in home,
+              'r21 Poster Cache': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_CACHE' in cache,
+              'r21 Token Redaction': 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' in http,
+              'Internal Provider Libraries': 'MEDIAPLUGINS2026_PROVIDER_LIBRARIES_INTERNAL1' in home,
+              'Provider Color Keys': 'MEDIAPLUGINS2026_HOME_PROVIDER_COLORKEYS1' in home,
+              'Green Emby': '"green": self.keyOpenEmbyLibraries' in home,
+              'Yellow Plex': '"yellow": self.keyOpenPlexLibraries' in home,
+              'Blue Jellyfin': '"blue": self.keyOpenJellyfinLibraries' in home,
+              'MediaServer TargetStyle4': 'MEDIAPLUGINS2026_MEDIASERVER_TARGETSTYLE4' in hub,
+              'MediaServer DetailTheme': 'MEDIAPLUGINS2026_MEDIASERVER_DETAILTHEMEFIX1' in hub,
+              'MediaServer Alias': 'MEDIAPLUGINS2026_SERVER_ALIAS_LABELS1_HUB' in hub,
+              'MediaServer Remote Name': 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_HUB' in hub,
+              'MediaServer Subtle Focus': 'MEDIAPLUGINS2026_MEDIASERVER_FOCUS_SUBTLE1' in hub,
+              '2px Focus': 'size="232,2"' in hub and 'backgroundColor="#178aa8"' in hub,
+              'Library Cinema UI': 'MEDIAPLUGINS2026_LIBRARY_CINEMA_UI1' in library,
+              'Provider Similar': 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_PROVIDER1' in library,
+              'Similar Navigation': 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_NAV1' in library,
+              'Library Remote Name': 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_LIBRARY' in library,
+              'Emby/Jellyfin Similar API': '/Similar?UserId=' in jelly,
+              'Emby/Jellyfin ServerName': '/System/Info/Public' in jelly,
+              'Plex Related API': '/related?includeExternalMedia=0' in plex,
+              'Plex FriendlyName': 'friendlyName' in plex,
+          }
+          missing = [name for name, ok in required.items() if not ok]
+          if missing:
+              raise SystemExit('r23-test Verifikation fehlgeschlagen: %r' % missing)
+
+          theme = root / 'skin/library_theme'
+          for name in ('mediaserver_bg.jpg','library_browser_bg.jpg','filme.jpg','filme_3d.jpg','filme_4k.jpg','filme_oton.jpg','hoerbuecher.jpg','konzerte.jpg','serien.jpg','serien_4k.jpg','serien_anime.jpg','serien_doku.jpg','detail_filme.jpg'):
+              if not (theme / name).is_file():
+                  raise SystemExit('Theme-Asset fehlt: %s' % name)
+          PY
+
+          printf '2.0\n' > build/debian-binary
+          GZIP=-n tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          GZIP=-n tar --owner=0 --group=0 -czf build/data.tar.gz -C build/data .
+          rm -f "$OUT"
+          ar r "$OUT" build/debian-binary build/control.tar.gz build/data.tar.gz
+
+          SHA="$(sha256sum "$OUT" | awk '{print $1}')"
+          echo "TEST_SHA256=$SHA" >> "$GITHUB_ENV"
+          echo "TEST_IPK=$OUT" >> "$GITHUB_ENV"
+          echo "Built $OUT sha256=$SHA"
+
+      - name: Verify packaged test IPK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verify/control verify/data
+          cd verify
+          ar x "../${TEST_IPK}"
+          tar -xzf control.tar.gz -C control
+          tar -xzf data.tar.gz -C data
+          ROOT="data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+
+          grep -q '^Package: enigma2-plugin-extensions-mediaplugins2026$' control/control
+          grep -q '^Version: 2026.1-r23-test1$' control/control
+          grep -q 'PLUGIN_VERSION = "2026.1-r23-test1"' "$ROOT/version.py"
+          grep -q 'MEDIAPLUGINS2026_HOME_PROVIDER_COLORKEYS1' "$ROOT/screens/HomeScreen.py"
+          grep -q '"green": self.keyOpenEmbyLibraries' "$ROOT/screens/HomeScreen.py"
+          grep -q '"yellow": self.keyOpenPlexLibraries' "$ROOT/screens/HomeScreen.py"
+          grep -q '"blue": self.keyOpenJellyfinLibraries' "$ROOT/screens/HomeScreen.py"
+          grep -q 'MEDIAPLUGINS2026_MEDIASERVER_TARGETSTYLE4' "$ROOT/screens/ServerFolderBrowser.py"
+          grep -q 'MEDIAPLUGINS2026_LIBRARY_CINEMA_UI1' "$ROOT/screens/LibraryBrowser.py"
+          grep -q 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_NAV1' "$ROOT/screens/LibraryBrowser.py"
+          ! find data -type f -name '*.pyc' | grep -q .
+          ! find data -type f -name '*.before_*' | grep -q .
+
+      - name: Publish prerelease for test users
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES=$'Media Plugins 2026 — 2026.1-r23-test1 (TEST)\n\nNur für Testuser. Stable bleibt r22.\n\nEnthalten:\n- kompletter r23 Cinema-/Provider-Umbau\n- interne Emby/Jellyfin/Plex-Bibliotheken\n- Cinema-Medienserver-Hub und Cinema-LibraryBrowser\n- echte Similar/Related-Titel inklusive Navigation\n- echte Remote-Servernamen\n- dezenter 2px-Fokus\n- NEU bestätigt: GRÜN = Emby, GELB = Plex, BLAU = Jellyfin direkt vom Home-Screen\n- r21 Poster-/Security-Fixes und r22 Crashfix bleiben enthalten\n\nSHA256: '"${TEST_SHA256}"
+
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" "$TEST_IPK" --clobber
+            gh release edit "$VERSION" --prerelease --title "Media Plugins 2026 — $VERSION" --notes "$NOTES"
+          else
+            gh release create "$VERSION" "$TEST_IPK" --prerelease \
+              --title "Media Plugins 2026 — $VERSION" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Publish test manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          version = os.environ['VERSION']
+          build = int(os.environ['BUILD'])
+          package = os.environ['PACKAGE']
+          sha = os.environ['TEST_SHA256']
+          filename = os.environ['TEST_IPK']
+          repo = os.environ['GITHUB_REPOSITORY']
+          manifest = {
+              'version': version,
+              'build': build,
+              'channel': 'test',
+              'download': f'https://github.com/{repo}/releases/download/{version}/{filename}',
+              'sha256': sha,
+              'artifact_type': 'ipk',
+              'package': package,
+              'changelog': [
+                  'Kompletter r23 Cinema-/Provider-Teststand',
+                  'Direkte Farbtasten: Gruen Emby, Gelb Plex, Blau Jellyfin',
+                  'Echte Similar/Related-Titel und Navigation',
+                  'Echte Remote-Servernamen und mehrere Clients',
+                  'Dezenter 2px-Fokus',
+              ],
+          }
+          Path('update-test.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update-test.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish r23 test manifest"
+            git push
+          fi

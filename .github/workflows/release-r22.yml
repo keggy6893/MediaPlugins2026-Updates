@@ -95,14 +95,16 @@ jobs:
               'card4_title entfernt': 'name="card4_title"' not in settings,
               'card4_url entfernt': 'name="card4_url"' not in settings,
               'card4_state entfernt': 'name="card4_state"' not in settings,
-              'ServerTypeSelect vorhanden': server_type_path.is_file(),
-              'ServerType Crashfix Marker': 'MEDIAPLUGINS2026_SERVERTYPE_CRASHFIX1' in server_type,
-              'EXIT liefert None': '"cancel": lambda: self.close(None),' in server_type,
-              'ROT liefert None': '"red": lambda: self.close(None),' in server_type,
               'r21 Poster-Pipeline bleibt': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' in home,
               'r21 interner Cache bleibt': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_CACHE' in cache,
               'r21 Token Redaction bleibt': 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' in http,
           }
+          if server_type_path.exists():
+              required.update({
+                  'ServerType Crashfix Marker': 'MEDIAPLUGINS2026_SERVERTYPE_CRASHFIX1' in server_type,
+                  'EXIT liefert None': '"cancel": lambda: self.close(None),' in server_type,
+                  'ROT liefert None': '"red": lambda: self.close(None),' in server_type,
+              })
           missing = [name for name, ok in required.items() if not ok]
           if missing:
               raise SystemExit('r22 Verifikation fehlgeschlagen: %r' % missing)
@@ -141,12 +143,15 @@ jobs:
           grep -q 'PLUGIN_VERSION = "2026.1-r22"' "$ROOT/version.py"
           grep -q 'MEDIAPLUGINS2026_SETTINGS_CRASHFIX1' "$ROOT/screens/Settings.py"
           grep -q 'def _onProtocolChosen(self, result=None):' "$ROOT/screens/Settings.py"
-          grep -q 'MEDIAPLUGINS2026_SERVERTYPE_CRASHFIX1' "$ROOT/screens/ServerTypeSelect.py"
-          grep -q '"cancel": lambda: self.close(None),' "$ROOT/screens/ServerTypeSelect.py"
-          grep -q '"red": lambda: self.close(None),' "$ROOT/screens/ServerTypeSelect.py"
+          grep -q 'lambda \*args: self.refreshList(),' "$ROOT/screens/Settings.py"
           grep -q 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' "$ROOT/screens/HomeScreen.py"
           grep -q 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' "$ROOT/backends/http_helper.py"
           ! grep -q 'name="card4_' "$ROOT/screens/Settings.py"
+          if test -f "$ROOT/screens/ServerTypeSelect.py"; then
+            grep -q 'MEDIAPLUGINS2026_SERVERTYPE_CRASHFIX1' "$ROOT/screens/ServerTypeSelect.py"
+            grep -q '"cancel": lambda: self.close(None),' "$ROOT/screens/ServerTypeSelect.py"
+            grep -q '"red": lambda: self.close(None),' "$ROOT/screens/ServerTypeSelect.py"
+          fi
           ! find data -type f -name '*.pyc' | grep -q .
           ! find data -type f -name '*.before_*' | grep -q .
 
@@ -156,7 +161,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES=$'Media Plugins 2026 — 2026.1-r22\n\nSettings-Crashfix:\n\n- Crash beim Abbrechen der Servertyp-Auswahl behoben\n- _onProtocolChosen akzeptiert jetzt einen leeren/None-Rückgabewert\n- ROT und EXIT im Media-Plugins-Servertyp-Fenster liefern explizit None\n- ServerConfig-Callback gegen leere Rückgabewerte abgesichert\n- veraltete card4_* Skin-Komponenten entfernt\n- Poster-Pipeline- und Datenschutz-Fixes aus r21 bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R22_SHA256}"
+          NOTES=$'Media Plugins 2026 — 2026.1-r22\n\nSettings-Crashfix:\n\n- Crash beim Abbrechen der Servertyp-Auswahl behoben\n- _onProtocolChosen akzeptiert jetzt einen leeren/None-Rückgabewert\n- ServerConfig-Callback gegen leere Rückgabewerte abgesichert\n- veraltete card4_* Skin-Komponenten entfernt\n- falls ein eigener Servertyp-Screen vorhanden ist, schließen ROT/EXIT explizit mit None\n- Poster-Pipeline- und Datenschutz-Fixes aus r21 bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R22_SHA256}"
           if gh release view "$VERSION" >/dev/null 2>&1; then
             gh release upload "$VERSION" "$R22_IPK" --clobber
           else
@@ -189,7 +194,7 @@ jobs:
               'package': package,
               'changelog': [
                   'Crash beim Abbrechen der Servertyp-Auswahl behoben',
-                  'Servertyp ROT/EXIT gibt stabil None zurueck',
+                  'Callback akzeptiert leeren bzw. None-Rueckgabewert',
                   'ServerConfig Callback gegen leere Rueckgabewerte abgesichert',
                   'Veraltete card4 Skin-Komponenten entfernt',
                   'Poster-Pipeline und Token-Redaction aus r21 bleiben erhalten',
@@ -206,7 +211,7 @@ jobs:
               marker = '## 2026.1-r21\n'
               if marker not in r:
                   raise SystemExit('README r21 Anker fehlt')
-              section = f'''## 2026.1-r22\n\nDer stabile r22-Hotfix behebt einen Settings-Crash beim Abbrechen der Servertyp-Auswahl:\n\n- `_onProtocolChosen(result=None)` ist abbruchsicher\n- ROT/EXIT im eigenen Servertyp-Fenster liefert explizit `None`\n- ServerConfig-Callback toleriert leere Rückgabewerte\n- veraltete `card4_*`-Skin-Komponenten entfernt\n- r21 Poster-Pipeline und Token-Redaction bleiben erhalten\n\nRelease-IPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
+              section = f'''## 2026.1-r22\n\nDer stabile r22-Hotfix behebt einen Settings-Crash beim Abbrechen der Servertyp-Auswahl:\n\n- `_onProtocolChosen(result=None)` ist abbruchsicher\n- ServerConfig-Callback toleriert leere Rückgabewerte\n- veraltete `card4_*`-Skin-Komponenten entfernt\n- optional vorhandener eigener Servertyp-Screen schließt ROT/EXIT explizit mit `None`\n- r21 Poster-Pipeline und Token-Redaction bleiben erhalten\n\nRelease-IPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
               readme.write_text(r.replace(marker, section + marker, 1), encoding='utf-8')
 
           changelog = Path('CHANGELOG.md')
@@ -215,7 +220,7 @@ jobs:
               marker = '## 2026.1-r21\n'
               if marker not in c:
                   raise SystemExit('CHANGELOG r21 Anker fehlt')
-              section = f'''## 2026.1-r22\n\nStabiler Settings-Crashfix auf Basis von r21.\n\n### Neu und bestätigt\n\n- Crash beim Abbrechen der Servertyp-Auswahl behoben\n- `_onProtocolChosen()` akzeptiert fehlenden Rückgabewert als `None`\n- ROT/EXIT des eigenen Servertyp-Screens schließen explizit mit `None`\n- ServerConfig-Callback toleriert 0..n Callback-Argumente\n- veraltete `card4_*`-Skin-Komponenten entfernt\n- r21 Poster-Pipeline und HTTP-Token-Redaction bleiben erhalten\n- Paket-Hygiene geprüft: keine Backups oder `.pyc`-Dateien\n\nIPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
+              section = f'''## 2026.1-r22\n\nStabiler Settings-Crashfix auf Basis von r21.\n\n### Neu und bestätigt\n\n- Crash beim Abbrechen der Servertyp-Auswahl behoben\n- `_onProtocolChosen()` akzeptiert fehlenden Rückgabewert als `None`\n- ServerConfig-Callback toleriert 0..n Callback-Argumente\n- veraltete `card4_*`-Skin-Komponenten entfernt\n- optionaler eigener Servertyp-Screen wird ebenfalls abbruchsicher gepatcht\n- r21 Poster-Pipeline und HTTP-Token-Redaction bleiben erhalten\n- Paket-Hygiene geprüft: keine Backups oder `.pyc`-Dateien\n\nIPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
               changelog.write_text(c.replace(marker, section + marker, 1), encoding='utf-8')
 
           dev = Path('development/2026-09-15/README.md')

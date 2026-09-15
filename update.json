@@ -1,17 +1,17 @@
 {
-  "version": "2026.1-r20",
-  "build": 2026091501,
+  "version": "2026.1-r21",
+  "build": 2026091502,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r20/enigma2-plugin-extensions-mediaplugins2026_2026.1-r20_all.ipk",
-  "sha256": "79691535ad537029fed97331eb7c1c94cbd02256d1840c60ac76bffe41df611f",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r21/enigma2-plugin-extensions-mediaplugins2026_2026.1-r21_all.ipk",
+  "sha256": "eecd6482a64abea0c63453951eb3529adbf30b8145dd05880279c73b0eed9e5a",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Poster-Fallbacks fuer Emby und Plex in Neu hinzugefuegt",
-    "Automatische taegliche Sicherung mit 7-Tage-Rotation",
-    "Sichtbare Sicherungen-Karte in den Einstellungen",
-    "Emby/Plex Provider-Icons und UI-Polish",
-    "Sicherung & Wiederherstellung mit Export und Import",
-    "Import aus Hauptscreen in Sicherungsdialog verschoben"
+    "Reboot-sichere Poster-Pipeline mit persistentem internem Cache",
+    "Keine HDD-/USB-Abhaengigkeit fuer Poster",
+    "Cache-Validierung, Atomic Write und Retry",
+    "Cold-Boot-Reparatur und Schutz vor stale Poster-Callbacks",
+    "Preview-/Ambient-Async-State abgesichert",
+    "Token und API-Keys im HTTP-Debuglog geschwaerzt"
   ]
 }

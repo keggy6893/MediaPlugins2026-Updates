@@ -69,6 +69,28 @@ Historische Zwischenfixes des Dialog-Debuggings liegen unter `development/2026-0
 
 Der stabile Update-Kanal bleibt zunächst auf `2026.1-r19`; `update.json` wird erst mit einem bewusst gebauten Folge-Release angehoben.
 
+## 2026.1-r21
+
+Stabiler Poster-Pipeline-Hotfix auf Basis von r20.
+
+### Neu und bestätigt
+
+- Poster bleiben nach vollständigem Reboot verfügbar
+- persistenter Cache unter `/etc/enigma2/mediaplugins2026/poster_cache`
+- keine HDD-/USB-Abhängigkeit
+- harte Cache-Grenzen: 12 MiB / 120 Dateien / 14 Tage
+- Bildvalidierung, atomische Writes und ein Retry bei transienten Fehlern
+- Generation Guard gegen verspätete asynchrone Poster-Callbacks
+- automatische Cold-Boot-Reparatur sichtbarer Poster
+- Preview-/Ambient-Async-State defensiv abgesichert
+- dunkler Poster-Fallback
+- sensible Token/API-Key-Parameter werden in HTTP-Debuglogs geschwärzt
+- r20-Funktionsumfang bleibt erhalten
+
+IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r21_all.ipk`
+
+SHA256: `eecd6482a64abea0c63453951eb3529adbf30b8145dd05880279c73b0eed9e5a`
+
 ## 2026.1-r20
 
 Stabiler Release des auf der Testbox bestätigten Post-r19-Stands.

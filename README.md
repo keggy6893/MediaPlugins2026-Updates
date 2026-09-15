@@ -15,6 +15,21 @@ Eine gemeinsame Enigma2-Oberfläche für Emby, Jellyfin und Plex.
 - Integrierter GitHub-Update-Bereich
 - Eigenes Media Plugins 2026 Branding und Logo
 
+## 2026.1-r21
+
+Der stabile r21-Hotfix härtet die Poster-Pipeline nach Reboots:
+
+- persistenter interner Poster-Cache ohne HDD/USB-Abhängigkeit
+- Cache-Validierung, atomische Writes und Retry
+- Cold-Boot-Reparatur und Schutz vor verspäteten Callbacks
+- abgesicherter Preview-/Ambient-State
+- dunkler Poster-Fallback
+- HTTP-Debuglogs schwärzen Token/API-Keys
+
+Release-IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r21_all.ipk`
+
+SHA256: `eecd6482a64abea0c63453951eb3529adbf30b8145dd05880279c73b0eed9e5a`
+
 ## 2026.1-r20
 
 Der stabile r20-Stand ergänzt r19 um:

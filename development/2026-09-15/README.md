@@ -39,4 +39,4 @@ Auf der Testbox nach vollständigem Reboot:
 
 ## Release-Hinweis
 
-Der stabile Update-Kanal bleibt unverändert. Dieser Commit dokumentiert den bestätigten Entwicklungsfix; `update.json` wurde **nicht** auf eine neue Version angehoben.
+Der bestätigte Poster-Pipeline-Fix wurde mit **2026.1-r21** in den stabilen Update-Kanal übernommen. Andere Nutzer erhalten ihn über den integrierten Media Plugins 2026 Updater.

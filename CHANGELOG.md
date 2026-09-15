@@ -2,13 +2,56 @@
 
 ## Entwicklungs-Hotfix nach 2026.1-r19
 
+### Home / Poster
+
 - **Leere Poster in „Neu hinzugefügt“**: Emby Season/Episode verwenden jetzt Serien-/PrimaryImageItem-Poster als Fallback.
 - Emby-Einträge ohne irgendein verwertbares Poster werden aus der Latest-Reihe ausgelassen.
 - Plex kann fehlende `thumb`/`parentThumb`/`grandparentThumb` über `grandparentRatingKey` bzw. `parentRatingKey` auflösen.
 - Der Home-Snapshot-Reuse startet nach dem Live-Item-Tausch wieder den Poster-Prefetch.
-- Patcher und Backups wurden auf der Testbox erfolgreich ausgeführt; die Syntaxprüfung von `HomeScreen.py`, `jellyfin_client.py` und `plex_client.py` war fehlerfrei.
+- Auf der Testbox bestätigt: `Neu hinzugefügt` zeigt Emby 15 + Plex 15 ohne leere Poster.
 
-Der Fix liegt unter `development/2026-09-14/MediaPlugins2026_LATEST_POSTERFIX1_patcher.py`. Der stabile Update-Kanal bleibt zunächst auf `2026.1-r19`.
+### Sicherungen / Restore
+
+- automatische Konfigurationssicherung einmal pro Kalendertag beim ersten Pluginstart
+- persistenter 7-Tage-Verlauf unter `/etc/enigma2/mediaplugins2026/backups`
+- Backup-Verzeichnis `0700`, Sicherungsdateien `0600`
+- sichtbare `Sicherungen`-Karte unter dem GitHub-Update-Bereich
+- Karte zeigt letzte Sicherung sowie `X / 7 vorhanden`
+- eigener Media-Plugins-2026-Sicherungsdialog
+- getrennte Aktionen:
+  - `GRÜN Jetzt sichern`
+  - `GELB Exportieren`
+  - `BLAU Importieren/Wiederherstellen`
+  - `ROT Abbrechen`
+- Import/Wiederherstellung hat einen eigenen Bestätigungsschritt
+- nach erfolgreicher Aktion bleibt nur `OK Schließen`
+- finale Dialogüberschrift: **Sicherung & Wiederherstellung**
+- `BLAU Importieren` wurde aus dem Haupt-Settings-Screen entfernt und in den Sicherungsdialog verschoben
+- nach Restore wird die Serverliste im Settings-Screen neu geladen
+
+### Settings / Providericons
+
+- sichtbares Cyan Backup-/Database-Icon in der Sicherungskarte
+- Emby- und Plex-Providericons in den Serverkarten und im rechten Detailbereich
+- finale Größe auf der Testbox: 26 px in Serverkarten, 24 px im Detailbereich
+- vier gleichmäßige Hauptbuttons nach Entfernung des redundanten Import-Buttons
+- Footer-Hinweis berücksichtigt nun `Sicherungen`
+
+### Dokumentation
+
+Die autoritativen Patcher liegen unter `development/2026-09-14/`.
+
+Für neue r19-Testboxen ist die finale Reihenfolge dokumentiert in:
+
+`development/2026-09-14/README.md`
+
+Der zusammengefasste finale Sicherungs-/Restore-Patcher ist:
+
+`development/2026-09-14/MediaPlugins2026_BACKUP_RESTORE_FINAL1_patcher.py`
+
+Historische Zwischenfixes des Dialog-Debuggings liegen unter `development/2026-09-14/intermediate/`.
+
+Der stabile Update-Kanal bleibt zunächst auf `2026.1-r19`; `update.json` wird erst mit einem bewusst gebauten Folge-Release angehoben.
 
 ## 2026.1-r19
 

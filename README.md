@@ -15,6 +15,20 @@ Eine gemeinsame Enigma2-Oberfläche für Emby, Jellyfin und Plex.
 - Integrierter GitHub-Update-Bereich
 - Eigenes Media Plugins 2026 Branding und Logo
 
+## 2026.1-r22
+
+Der stabile r22-Hotfix behebt einen Settings-Crash beim Abbrechen der Servertyp-Auswahl:
+
+- `_onProtocolChosen(result=None)` ist abbruchsicher
+- ServerConfig-Callback toleriert leere Rückgabewerte
+- veraltete `card4_*`-Skin-Komponenten entfernt
+- optional vorhandener eigener Servertyp-Screen schließt ROT/EXIT explizit mit `None`
+- r21 Poster-Pipeline und Token-Redaction bleiben erhalten
+
+Release-IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r22_all.ipk`
+
+SHA256: `1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2`
+
 ## 2026.1-r21
 
 Der stabile r21-Hotfix härtet die Poster-Pipeline nach Reboots:

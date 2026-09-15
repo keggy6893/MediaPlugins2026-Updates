@@ -69,6 +69,24 @@ Historische Zwischenfixes des Dialog-Debuggings liegen unter `development/2026-0
 
 Der stabile Update-Kanal bleibt zunächst auf `2026.1-r19`; `update.json` wird erst mit einem bewusst gebauten Folge-Release angehoben.
 
+## 2026.1-r22
+
+Stabiler Settings-Crashfix auf Basis von r21.
+
+### Neu und bestätigt
+
+- Crash beim Abbrechen der Servertyp-Auswahl behoben
+- `_onProtocolChosen()` akzeptiert fehlenden Rückgabewert als `None`
+- ServerConfig-Callback toleriert 0..n Callback-Argumente
+- veraltete `card4_*`-Skin-Komponenten entfernt
+- optionaler eigener Servertyp-Screen wird ebenfalls abbruchsicher gepatcht
+- r21 Poster-Pipeline und HTTP-Token-Redaction bleiben erhalten
+- Paket-Hygiene geprüft: keine Backups oder `.pyc`-Dateien
+
+IPK: `enigma2-plugin-extensions-mediaplugins2026_2026.1-r22_all.ipk`
+
+SHA256: `1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2`
+
 ## 2026.1-r21
 
 Stabiler Poster-Pipeline-Hotfix auf Basis von r20.

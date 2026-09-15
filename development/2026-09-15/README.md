@@ -40,3 +40,7 @@ Auf der Testbox nach vollständigem Reboot:
 ## Release-Hinweis
 
 Der bestätigte Poster-Pipeline-Fix wurde mit **2026.1-r21** in den stabilen Update-Kanal übernommen. Andere Nutzer erhalten ihn über den integrierten Media Plugins 2026 Updater.
+## Settings-Crashfix r22
+
+Der bestätigte Abbruch-Crashfix aus `MediaPlugins2026_SETTINGS_CRASHFIX1_patcher.py` wurde mit **2026.1-r22** in den stabilen Update-Kanal übernommen.
+

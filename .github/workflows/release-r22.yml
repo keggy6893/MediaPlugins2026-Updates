@@ -1,0 +1,237 @@
+name: Build and publish r22
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-r22.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 2026.1-r22
+      BUILD: '2026091503'
+      PACKAGE: enigma2-plugin-extensions-mediaplugins2026
+      R21_SHA256: eecd6482a64abea0c63453951eb3529adbf30b8145dd05880279c73b0eed9e5a
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build r22 from stable r21
+        shell: bash
+        run: |
+          set -euo pipefail
+          R21="${PACKAGE}_2026.1-r21_all.ipk"
+          OUT="${PACKAGE}_${VERSION}_all.ipk"
+          ROOT="$PWD/build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+
+          curl -fL "https://github.com/${GITHUB_REPOSITORY}/releases/download/2026.1-r21/${R21}" -o "${R21}"
+          echo "${R21_SHA256}  ${R21}" | sha256sum -c -
+
+          rm -rf build
+          mkdir -p build/work build/control build/data
+          cd build/work
+          ar x "../../${R21}"
+          cd ../control
+          tar -xzf ../work/control.tar.gz
+          cd ../data
+          tar -xzf ../work/data.tar.gz
+          cd "$GITHUB_WORKSPACE"
+
+          python development/2026-09-15/MediaPlugins2026_SETTINGS_CRASHFIX1_patcher.py "$ROOT"
+
+          find "$ROOT" -type f \( -name '*.before_*' -o -name '*.pyc' -o -name '*.bak' -o -name '*~' \) -delete
+          find "$ROOT" -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+          python - <<'PY'
+          from pathlib import Path
+          import os, re
+
+          version = os.environ['VERSION']
+          build = os.environ['BUILD']
+          root = Path('build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026')
+
+          version_py = root / 'version.py'
+          s = version_py.read_text(encoding='utf-8')
+          s, n1 = re.subn(r'PLUGIN_VERSION\s*=\s*"[^"]+"', f'PLUGIN_VERSION = "{version}"', s, count=1)
+          s, n2 = re.subn(r'PLUGIN_UPDATE_BUILD\s*=\s*\d+', f'PLUGIN_UPDATE_BUILD = {build}', s, count=1)
+          if n1 != 1 or n2 != 1:
+              raise SystemExit('version.py Version/Build konnte nicht gesetzt werden')
+          version_py.write_text(s, encoding='utf-8')
+
+          control = Path('build/control/control')
+          cs = control.read_text(encoding='utf-8')
+          cs, n = re.subn(r'(?m)^Version:\s*\S+', f'Version: {version}', cs, count=1)
+          if n != 1:
+              raise SystemExit('control Version konnte nicht gesetzt werden')
+          control.write_text(cs, encoding='utf-8')
+
+          checked = 0
+          for py in root.rglob('*.py'):
+              compile(py.read_text(encoding='utf-8'), str(py), 'exec')
+              checked += 1
+          print('Python-Dateien geprüft:', checked)
+
+          settings = (root / 'screens/Settings.py').read_text(encoding='utf-8')
+          server_type_path = root / 'screens/ServerTypeSelect.py'
+          server_type = server_type_path.read_text(encoding='utf-8') if server_type_path.exists() else ''
+          home = (root / 'screens/HomeScreen.py').read_text(encoding='utf-8')
+          cache = (root / 'utils/image_cache.py').read_text(encoding='utf-8')
+          http = (root / 'backends/http_helper.py').read_text(encoding='utf-8')
+
+          required = {
+              'Settings Crashfix Marker': 'MEDIAPLUGINS2026_SETTINGS_CRASHFIX1' in settings,
+              'Optional result Callback': 'def _onProtocolChosen(self, result=None):' in settings,
+              'Robuster ServerConfig Callback': 'lambda *args: self.refreshList(),' in settings,
+              'card4_bg entfernt': 'name="card4_bg"' not in settings,
+              'card4_focus entfernt': 'name="card4_focus"' not in settings,
+              'card4_provider entfernt': 'name="card4_provider"' not in settings,
+              'card4_title entfernt': 'name="card4_title"' not in settings,
+              'card4_url entfernt': 'name="card4_url"' not in settings,
+              'card4_state entfernt': 'name="card4_state"' not in settings,
+              'ServerTypeSelect vorhanden': server_type_path.is_file(),
+              'ServerType Crashfix Marker': 'MEDIAPLUGINS2026_SERVERTYPE_CRASHFIX1' in server_type,
+              'EXIT liefert None': '"cancel": lambda: self.close(None),' in server_type,
+              'ROT liefert None': '"red": lambda: self.close(None),' in server_type,
+              'r21 Poster-Pipeline bleibt': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' in home,
+              'r21 interner Cache bleibt': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_CACHE' in cache,
+              'r21 Token Redaction bleibt': 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' in http,
+          }
+          missing = [name for name, ok in required.items() if not ok]
+          if missing:
+              raise SystemExit('r22 Verifikation fehlgeschlagen: %r' % missing)
+
+          bad = [p for p in root.rglob('*') if p.is_file() and (
+              p.suffix == '.pyc' or '.before_' in p.name or p.name.endswith('.bak')
+          )]
+          if bad:
+              raise SystemExit('Paket-Hygiene fehlgeschlagen: %r' % [str(x) for x in bad])
+          PY
+
+          printf '2.0\n' > build/debian-binary
+          GZIP=-n tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          GZIP=-n tar --owner=0 --group=0 -czf build/data.tar.gz -C build/data .
+          rm -f "$OUT"
+          ar r "$OUT" build/debian-binary build/control.tar.gz build/data.tar.gz
+
+          SHA="$(sha256sum "$OUT" | awk '{print $1}')"
+          echo "R22_SHA256=$SHA" >> "$GITHUB_ENV"
+          echo "R22_IPK=$OUT" >> "$GITHUB_ENV"
+          echo "Built $OUT sha256=$SHA"
+
+      - name: Verify packaged IPK
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf verify
+          mkdir -p verify/control verify/data
+          cd verify
+          ar x "../${R22_IPK}"
+          tar -xzf control.tar.gz -C control
+          tar -xzf data.tar.gz -C data
+          ROOT="data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+          grep -q '^Package: enigma2-plugin-extensions-mediaplugins2026$' control/control
+          grep -q '^Version: 2026.1-r22$' control/control
+          grep -q 'PLUGIN_VERSION = "2026.1-r22"' "$ROOT/version.py"
+          grep -q 'MEDIAPLUGINS2026_SETTINGS_CRASHFIX1' "$ROOT/screens/Settings.py"
+          grep -q 'def _onProtocolChosen(self, result=None):' "$ROOT/screens/Settings.py"
+          grep -q 'MEDIAPLUGINS2026_SERVERTYPE_CRASHFIX1' "$ROOT/screens/ServerTypeSelect.py"
+          grep -q '"cancel": lambda: self.close(None),' "$ROOT/screens/ServerTypeSelect.py"
+          grep -q '"red": lambda: self.close(None),' "$ROOT/screens/ServerTypeSelect.py"
+          grep -q 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' "$ROOT/screens/HomeScreen.py"
+          grep -q 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' "$ROOT/backends/http_helper.py"
+          ! grep -q 'name="card4_' "$ROOT/screens/Settings.py"
+          ! find data -type f -name '*.pyc' | grep -q .
+          ! find data -type f -name '*.before_*' | grep -q .
+
+      - name: Publish GitHub release asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES=$'Media Plugins 2026 — 2026.1-r22\n\nSettings-Crashfix:\n\n- Crash beim Abbrechen der Servertyp-Auswahl behoben\n- _onProtocolChosen akzeptiert jetzt einen leeren/None-Rückgabewert\n- ROT und EXIT im Media-Plugins-Servertyp-Fenster liefern explizit None\n- ServerConfig-Callback gegen leere Rückgabewerte abgesichert\n- veraltete card4_* Skin-Komponenten entfernt\n- Poster-Pipeline- und Datenschutz-Fixes aus r21 bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R22_SHA256}"
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" "$R22_IPK" --clobber
+          else
+            gh release create "$VERSION" "$R22_IPK" --title "Media Plugins 2026 — $VERSION" --notes "$NOTES" --target "$GITHUB_SHA"
+          fi
+
+      - name: Publish stable r22 manifest and docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          version = os.environ['VERSION']
+          build = int(os.environ['BUILD'])
+          package = os.environ['PACKAGE']
+          sha = os.environ['R22_SHA256']
+          filename = os.environ['R22_IPK']
+          repo = os.environ['GITHUB_REPOSITORY']
+          download = f'https://github.com/{repo}/releases/download/{version}/{filename}'
+
+          manifest = {
+              'version': version,
+              'build': build,
+              'channel': 'stable',
+              'download': download,
+              'sha256': sha,
+              'artifact_type': 'ipk',
+              'package': package,
+              'changelog': [
+                  'Crash beim Abbrechen der Servertyp-Auswahl behoben',
+                  'Servertyp ROT/EXIT gibt stabil None zurueck',
+                  'ServerConfig Callback gegen leere Rueckgabewerte abgesichert',
+                  'Veraltete card4 Skin-Komponenten entfernt',
+                  'Poster-Pipeline und Token-Redaction aus r21 bleiben erhalten',
+              ],
+          }
+          Path('update.json').write_text(
+              json.dumps(manifest, indent=2, ensure_ascii=False) + '\n',
+              encoding='utf-8'
+          )
+
+          readme = Path('README.md')
+          r = readme.read_text(encoding='utf-8')
+          if '## 2026.1-r22\n' not in r:
+              marker = '## 2026.1-r21\n'
+              if marker not in r:
+                  raise SystemExit('README r21 Anker fehlt')
+              section = f'''## 2026.1-r22\n\nDer stabile r22-Hotfix behebt einen Settings-Crash beim Abbrechen der Servertyp-Auswahl:\n\n- `_onProtocolChosen(result=None)` ist abbruchsicher\n- ROT/EXIT im eigenen Servertyp-Fenster liefert explizit `None`\n- ServerConfig-Callback toleriert leere Rückgabewerte\n- veraltete `card4_*`-Skin-Komponenten entfernt\n- r21 Poster-Pipeline und Token-Redaction bleiben erhalten\n\nRelease-IPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
+              readme.write_text(r.replace(marker, section + marker, 1), encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          c = changelog.read_text(encoding='utf-8')
+          if '## 2026.1-r22\n' not in c:
+              marker = '## 2026.1-r21\n'
+              if marker not in c:
+                  raise SystemExit('CHANGELOG r21 Anker fehlt')
+              section = f'''## 2026.1-r22\n\nStabiler Settings-Crashfix auf Basis von r21.\n\n### Neu und bestätigt\n\n- Crash beim Abbrechen der Servertyp-Auswahl behoben\n- `_onProtocolChosen()` akzeptiert fehlenden Rückgabewert als `None`\n- ROT/EXIT des eigenen Servertyp-Screens schließen explizit mit `None`\n- ServerConfig-Callback toleriert 0..n Callback-Argumente\n- veraltete `card4_*`-Skin-Komponenten entfernt\n- r21 Poster-Pipeline und HTTP-Token-Redaction bleiben erhalten\n- Paket-Hygiene geprüft: keine Backups oder `.pyc`-Dateien\n\nIPK: `{filename}`\n\nSHA256: `{sha}`\n\n'''
+              changelog.write_text(c.replace(marker, section + marker, 1), encoding='utf-8')
+
+          dev = Path('development/2026-09-15/README.md')
+          if dev.exists():
+              d = dev.read_text(encoding='utf-8')
+              note = '\n## Settings-Crashfix r22\n\nDer bestätigte Abbruch-Crashfix aus `MediaPlugins2026_SETTINGS_CRASHFIX1_patcher.py` wurde mit **2026.1-r22** in den stabilen Update-Kanal übernommen.\n'
+              if '## Settings-Crashfix r22\n' not in d:
+                  dev.write_text(d.rstrip() + note + '\n', encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add update.json README.md CHANGELOG.md development/2026-09-15/README.md
+          if git diff --cached --quiet; then
+            echo "Manifest/docs bereits aktuell"
+          else
+            git commit -m 'Publish Media Plugins 2026 r22 stable manifest'
+            git push origin HEAD:main
+          fi

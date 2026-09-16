@@ -1,0 +1,170 @@
+name: Publish r22 testposter1 updater build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-r22-testposter1.yml'
+      - 'development/2026-09-16/MediaPlugins2026_HOME_POSTER_SUPERVISOR1_patcher.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 2026.1-r22-testposter1
+      BUILD: '2026091603'
+      PACKAGE: enigma2-plugin-extensions-mediaplugins2026
+      R22_SHA256: 1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build test-channel IPK from confirmed r22
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="${PACKAGE}_2026.1-r22_all.ipk"
+          OUT="${PACKAGE}_${VERSION}_all.ipk"
+          ROOT="$PWD/build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+
+          curl -fL "https://github.com/${GITHUB_REPOSITORY}/releases/download/2026.1-r22/${BASE}" -o "$BASE"
+          echo "${R22_SHA256}  ${BASE}" | sha256sum -c -
+
+          rm -rf build verify
+          mkdir -p build/work build/control build/data
+          (cd build/work && ar x "../../${BASE}")
+          tar -xzf build/work/control.tar.gz -C build/control
+          tar -xzf build/work/data.tar.gz -C build/data
+
+          python development/2026-09-16/MediaPlugins2026_HOME_POSTER_SUPERVISOR1_patcher.py "$ROOT"
+
+          find "$ROOT" -type f \( -name '*.before_*' -o -name '*.pyc' -o -name '*.bak' -o -name '*~' \) -delete
+          find "$ROOT" -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+          python - <<'PY'
+          from pathlib import Path
+          import os, re
+          root = Path('build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026')
+          vp = root / 'version.py'
+          s = vp.read_text(encoding='utf-8')
+
+          def one(pattern, repl, label):
+              global s
+              s, n = re.subn(pattern, repl, s, count=1)
+              if n != 1:
+                  raise SystemExit('%s replacement failed' % label)
+
+          one(r'PLUGIN_VERSION\s*=\s*"[^"]+"', 'PLUGIN_VERSION = "%s"' % os.environ['VERSION'], 'version')
+          one(r'PLUGIN_UPDATE_BUILD\s*=\s*\d+', 'PLUGIN_UPDATE_BUILD = %s' % os.environ['BUILD'], 'build')
+          one(r'PLUGIN_UPDATE_CHANNEL\s*=\s*"[^"]+"', 'PLUGIN_UPDATE_CHANNEL = "test"', 'channel')
+
+          manifest_url = 'https://raw.githubusercontent.com/%s/main/update-test.json' % os.environ['GITHUB_REPOSITORY']
+          if re.search(r'(?m)^PLUGIN_UPDATE_MANIFEST_URL\s*=.*$', s):
+              s, n = re.subn(
+                  r'(?m)^PLUGIN_UPDATE_MANIFEST_URL\s*=.*$',
+                  'PLUGIN_UPDATE_MANIFEST_URL = "%s"' % manifest_url,
+                  s,
+                  count=1,
+              )
+              if n != 1:
+                  raise SystemExit('manifest URL replacement failed')
+          else:
+              s, n = re.subn(r'update\.json', 'update-test.json', s, count=1)
+              if n != 1:
+                  raise SystemExit('no updater manifest URL found')
+
+          vp.write_text(s, encoding='utf-8')
+
+          cp = Path('build/control/control')
+          c = cp.read_text(encoding='utf-8')
+          c, n = re.subn(r'(?m)^Version:\s*\S+', 'Version: %s' % os.environ['VERSION'], c, count=1)
+          if n != 1:
+              raise SystemExit('control version replacement failed')
+          cp.write_text(c, encoding='utf-8')
+
+          for py in root.rglob('*.py'):
+              compile(py.read_text(encoding='utf-8'), str(py), 'exec')
+
+          home = (root / 'screens/HomeScreen.py').read_text(encoding='utf-8')
+          ver = vp.read_text(encoding='utf-8')
+          for token in (
+              'MEDIAPLUGINS2026_HOME_POSTER_SUPERVISOR1',
+              'self._poster_inflight = set()',
+              'round_no < 24',
+          ):
+              if token not in home:
+                  raise SystemExit('poster supervisor verification missing: %s' % token)
+          if 'PLUGIN_UPDATE_CHANNEL = "test"' not in ver or 'update-test.json' not in ver:
+              raise SystemExit('test updater channel not embedded')
+          PY
+
+          printf '2.0\n' > build/debian-binary
+          GZIP=-n tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          GZIP=-n tar --owner=0 --group=0 -czf build/data.tar.gz -C build/data .
+          rm -f "$OUT"
+          ar r "$OUT" build/debian-binary build/control.tar.gz build/data.tar.gz
+
+          mkdir -p verify/control verify/data
+          (cd verify && ar x "../$OUT")
+          tar -xzf verify/control.tar.gz -C verify/control
+          tar -xzf verify/data.tar.gz -C verify/data
+          VROOT="verify/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+          grep -q '^Version: 2026.1-r22-testposter1$' verify/control/control
+          grep -q 'PLUGIN_VERSION = "2026.1-r22-testposter1"' "$VROOT/version.py"
+          grep -q 'PLUGIN_UPDATE_CHANNEL = "test"' "$VROOT/version.py"
+          grep -q 'update-test.json' "$VROOT/version.py"
+          grep -q 'MEDIAPLUGINS2026_HOME_POSTER_SUPERVISOR1' "$VROOT/screens/HomeScreen.py"
+
+          SHA="$(sha256sum "$OUT" | awk '{print $1}')"
+          echo "TEST_IPK=$OUT" >> "$GITHUB_ENV"
+          echo "TEST_SHA256=$SHA" >> "$GITHUB_ENV"
+
+      - name: Publish prerelease and test updater manifest
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES=$'Media Plugins 2026 — r22-testposter1\n\nTESTKANAL. Stable bleibt r22.\n\n- Poster-Supervisor gegen leere Home-Poster nach Cold Start\n- laengere selbstheilende Reparaturaufsicht\n- ein paralleler Poster-Download pro Item\n- Retry-Cooldown statt Request-Stau\n- Paket ist dauerhaft auf update-test.json eingestellt\n\nSHA256: '"${TEST_SHA256}"
+
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" "$TEST_IPK" --clobber
+            gh release edit "$VERSION" --prerelease --title "Media Plugins 2026 — $VERSION" --notes "$NOTES"
+          else
+            gh release create "$VERSION" "$TEST_IPK" --prerelease --title "Media Plugins 2026 — $VERSION" --notes "$NOTES" --target "$GITHUB_SHA"
+          fi
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          version = os.environ['VERSION']
+          filename = os.environ['TEST_IPK']
+          repo = os.environ['GITHUB_REPOSITORY']
+          manifest = {
+              'version': version,
+              'build': int(os.environ['BUILD']),
+              'channel': 'test',
+              'download': 'https://github.com/%s/releases/download/%s/%s' % (repo, version, filename),
+              'sha256': os.environ['TEST_SHA256'],
+              'artifact_type': 'ipk',
+              'package': os.environ['PACKAGE'],
+              'changelog': [
+                  'Poster-Supervisor fuer leere Home-Poster',
+                  'Laengere selbstheilende Reparaturaufsicht',
+                  'Testkanal fuer weitere Updates direkt auf der Box',
+              ],
+          }
+          Path('update-test.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update-test.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish test updater manifest r22-testposter1"
+            git push
+          fi

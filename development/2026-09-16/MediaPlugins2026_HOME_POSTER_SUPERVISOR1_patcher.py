@@ -13,6 +13,7 @@ TARGET_REL = "screens/HomeScreen.py"
 
 MARKER = "# MEDIAPLUGINS2026_HOME_POSTER_SUPERVISOR1"
 REQUIRED_HARDEN = "MEDIAPLUGINS2026_POSTER_PIPELINE_HARDEN1_HOME"
+REQUIRED_R21 = "MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME"
 
 ROW_SETITEMS = r'''    def setItems(self, items):
         current_key = None
@@ -323,9 +324,9 @@ def patch(text):
     if MARKER in text:
         return text
 
-    if REQUIRED_HARDEN not in text:
+    if REQUIRED_HARDEN not in text and REQUIRED_R21 not in text:
         raise RuntimeError(
-            "POSTER_PIPELINE_HARDEN1 fehlt. Abbruch ohne Aenderung."
+            "Gehaerteter Poster-Pfad (HARDEN1/R21) fehlt. Abbruch ohne Aenderung."
         )
 
     required_methods = (

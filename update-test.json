@@ -1,0 +1,14 @@
+{
+  "version": "2026.1-r22-testposter1",
+  "build": 2026091603,
+  "channel": "test",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r22-testposter1/enigma2-plugin-extensions-mediaplugins2026_2026.1-r22-testposter1_all.ipk",
+  "sha256": "4b93fa32757701a3acb75b30013624e83ace6de8a1d031158dafbe751d085f51",
+  "artifact_type": "ipk",
+  "package": "enigma2-plugin-extensions-mediaplugins2026",
+  "changelog": [
+    "Poster-Supervisor fuer leere Home-Poster",
+    "Laengere selbstheilende Reparaturaufsicht",
+    "Testkanal fuer weitere Updates direkt auf der Box"
+  ]
+}

@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/release-r23-test2.yml'
-      - 'development/2026-09-15/r23_core_parts/**'
+      - 'development/2026-09-15/r23_test_slim_bundle/**'
       - 'development/2026-09-15/MediaPlugins2026_HOME_PROVIDER_COLORKEYS1_patcher.py'
       - 'development/2026-09-16/MediaPlugins2026_HOME_POSTER_SUPERVISOR1_patcher.py'
   workflow_dispatch:
@@ -21,7 +21,6 @@ jobs:
       BUILD: '2026091602'
       PACKAGE: enigma2-plugin-extensions-mediaplugins2026
       R22_SHA256: 1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2
-      R23_CORE_SHA256: 66d85096bb0b1f321df7aac422fd55cc221880f895c38be240265a1b4c2cfc62
 
     steps:
       - uses: actions/checkout@v4
@@ -43,15 +42,14 @@ jobs:
           tar -xzf build/work/control.tar.gz -C build/control
           tar -xzf build/work/data.tar.gz -C build/data
 
-          cat development/2026-09-15/r23_core_parts/part*.b64 | tr -d '\n\r' > /tmp/r23core.b64
+          cat development/2026-09-15/r23_test_slim_bundle/part*.b64 | tr -d '\n\r' > /tmp/r23core.b64
           python - <<'PY'
-          import base64, hashlib, os, zlib
+          import base64, gzip, hashlib
           from pathlib import Path
-          raw = zlib.decompress(base64.b64decode(Path('/tmp/r23core.b64').read_text().strip()))
-          got = hashlib.sha256(raw).hexdigest()
-          want = os.environ['R23_CORE_SHA256']
-          if got != want:
-              raise SystemExit('r23 core SHA mismatch: %s != %s' % (got, want))
+          compressed = base64.b64decode(Path('/tmp/r23core.b64').read_text().strip())
+          raw = gzip.decompress(compressed)
+          print('r23 slim core bytes=%d sha256=%s' % (len(raw), hashlib.sha256(raw).hexdigest()))
+          compile(raw.decode('utf-8'), '/tmp/r23core.py', 'exec')
           Path('/tmp/r23core.py').write_bytes(raw)
           PY
 

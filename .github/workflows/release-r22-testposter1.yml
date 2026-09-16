@@ -52,9 +52,9 @@ jobs:
           vp = root / 'version.py'
           s = vp.read_text(encoding='utf-8')
 
-          def one(pattern, repl, label):
+          def one(pattern, repl, label, flags=0):
               global s
-              s, n = re.subn(pattern, repl, s, count=1)
+              s, n = re.subn(pattern, repl, s, count=1, flags=flags)
               if n != 1:
                   raise SystemExit('%s replacement failed' % label)
 
@@ -63,19 +63,15 @@ jobs:
           one(r'PLUGIN_UPDATE_CHANNEL\s*=\s*"[^"]+"', 'PLUGIN_UPDATE_CHANNEL = "test"', 'channel')
 
           manifest_url = 'https://raw.githubusercontent.com/%s/main/update-test.json' % os.environ['GITHUB_REPOSITORY']
-          if re.search(r'(?m)^PLUGIN_UPDATE_MANIFEST_URL\s*=.*$', s):
-              s, n = re.subn(
-                  r'(?m)^PLUGIN_UPDATE_MANIFEST_URL\s*=.*$',
-                  'PLUGIN_UPDATE_MANIFEST_URL = "%s"' % manifest_url,
-                  s,
-                  count=1,
-              )
-              if n != 1:
-                  raise SystemExit('manifest URL replacement failed')
-          else:
-              s, n = re.subn(r'update\.json', 'update-test.json', s, count=1)
-              if n != 1:
-                  raise SystemExit('no updater manifest URL found')
+          manifest_pattern = r'(?ms)^PLUGIN_UPDATE_MANIFEST_URL\s*=\s*(?:\(.*?^\)|[^\n]+)'
+          s, n = re.subn(
+              manifest_pattern,
+              'PLUGIN_UPDATE_MANIFEST_URL = "%s"' % manifest_url,
+              s,
+              count=1,
+          )
+          if n != 1:
+              raise SystemExit('manifest URL replacement failed')
 
           vp.write_text(s, encoding='utf-8')
 

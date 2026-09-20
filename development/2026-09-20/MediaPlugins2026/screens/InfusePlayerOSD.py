@@ -6,6 +6,7 @@
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX5_PANEL_POLISH
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX6_PANEL_ZORDER
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX7_BOTTOM_ALIGN
+# MEDIAPLUGINS2026_UNIFIED_OSD_FIX8_BASE_BOTTOM_PANEL_UP
 
 from enigma import eTimer, iServiceInformation
 from Screens.Screen import Screen
@@ -36,104 +37,104 @@ class InfusePlayerOSD(Screen):
     skin = """
     <screen name="InfusePlayerOSD" position="40,580" size="1840,500"
             flags="wfNoBorder" backgroundColor="#C0091622">
-        <eLabel position="0,0" size="1840,2" backgroundColor="#18A7E0" zPosition="1" />
+        <eLabel position="0,264" size="1840,2" backgroundColor="#18A7E0" zPosition="1" />
 
-        <widget name="title" position="32,13" size="1050,42" font="Bold;34"
+        <widget name="title" position="32,277" size="1050,42" font="Bold;34"
                 foregroundColor="#FFFFFF" transparent="1" zPosition="3" />
-        <widget name="meta" position="32,55" size="1050,27" font="Regular;18"
+        <widget name="meta" position="32,319" size="1050,27" font="Regular;18"
                 foregroundColor="#B8CDD9" transparent="1" />
 
-        <widget name="chapter_bg" position="1200,9" size="420,82" font="Regular;1"
+        <widget name="chapter_bg" position="1200,273" size="420,82" font="Regular;1"
                 foregroundColor="#0B1823" backgroundColor="#B80B1823" transparent="0"
                 borderWidth="1" borderColor="#2E6683" />
-        <widget name="chapter_head" position="1220,19" size="378,20" font="Regular;15"
+        <widget name="chapter_head" position="1220,283" size="378,20" font="Regular;15"
                 foregroundColor="#9FB6C6" transparent="1" halign="right" />
-        <widget name="chapter_name" position="1220,41" size="378,25" font="Bold;18"
+        <widget name="chapter_name" position="1220,305" size="378,25" font="Bold;18"
                 foregroundColor="#FFFFFF" transparent="1" halign="right" />
-        <widget name="chapter_range" position="1220,67" size="378,19" font="Regular;15"
+        <widget name="chapter_range" position="1220,331" size="378,19" font="Regular;15"
                 foregroundColor="#8CCEF6" transparent="1" halign="right" />
 
-        <widget name="clock" position="1650,17" size="150,30" font="Regular;23"
+        <widget name="clock" position="1650,281" size="150,30" font="Regular;23"
                 foregroundColor="#FFFFFF" transparent="1" halign="right" />
-        <widget name="provider_top" position="1650,50" size="150,25" font="Bold;17"
+        <widget name="provider_top" position="1650,314" size="150,25" font="Bold;17"
                 foregroundColor="#35C96B" transparent="1" halign="right" />
 
-        <widget name="position" position="32,96" size="125,30" font="Regular;21"
+        <widget name="position" position="32,360" size="125,30" font="Regular;21"
                 foregroundColor="#FFFFFF" transparent="1" zPosition="3" />
-        <widget name="progress" position="160,104" size="1475,14" borderWidth="1"
+        <widget name="progress" position="160,368" size="1475,14" borderWidth="1"
                 borderColor="#49677A" backgroundColor="#172935" foregroundColor="#18A7E0" />
-        <widget name="duration" position="1645,96" size="155,30" font="Regular;21"
+        <widget name="duration" position="1645,360" size="155,30" font="Regular;21"
                 foregroundColor="#FFFFFF" transparent="1" halign="right" />
 
-        <eLabel position="32,132" size="1768,1" backgroundColor="#29495D" />
+        <eLabel position="32,396" size="1768,1" backgroundColor="#29495D" />
 
-        <widget name="transport" position="32,143" size="225,42" font="Bold;23"
+        <widget name="transport" position="32,407" size="225,42" font="Bold;23"
                 foregroundColor="#FFFFFF" transparent="1" zPosition="3" />
 
-        <widget name="key_red" position="295,141" size="215,44" font="Regular;19"
+        <widget name="key_red" position="295,405" size="215,44" font="Regular;19"
                 foregroundColor="#F3F7FA" backgroundColor="#121F2A" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#2E6683" />
-        <widget name="dot_red" position="312,150" size="24,24" font="Regular;19"
+        <widget name="dot_red" position="312,414" size="24,24" font="Regular;19"
                 foregroundColor="#FF4D55" transparent="1" halign="center" />
 
-        <widget name="key_green" position="520,141" size="185,44" font="Regular;19"
+        <widget name="key_green" position="520,405" size="185,44" font="Regular;19"
                 foregroundColor="#F3F7FA" backgroundColor="#121F2A" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#2E6683" />
-        <widget name="dot_green" position="536,150" size="24,24" font="Regular;19"
+        <widget name="dot_green" position="536,414" size="24,24" font="Regular;19"
                 foregroundColor="#36D46A" transparent="1" halign="center" />
 
-        <widget name="key_yellow" position="715,141" size="185,44" font="Regular;19"
+        <widget name="key_yellow" position="715,405" size="185,44" font="Regular;19"
                 foregroundColor="#F3F7FA" backgroundColor="#121F2A" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#2E6683" />
-        <widget name="dot_yellow" position="731,150" size="24,24" font="Regular;19"
+        <widget name="dot_yellow" position="731,414" size="24,24" font="Regular;19"
                 foregroundColor="#FFC229" transparent="1" halign="center" />
 
-        <widget name="key_blue" position="910,141" size="165,44" font="Regular;19"
+        <widget name="key_blue" position="910,405" size="165,44" font="Regular;19"
                 foregroundColor="#F3F7FA" backgroundColor="#121F2A" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#2E6683" />
-        <widget name="dot_blue" position="926,150" size="24,24" font="Regular;19"
+        <widget name="dot_blue" position="926,414" size="24,24" font="Regular;19"
                 foregroundColor="#1EA7FF" transparent="1" halign="center" />
 
-        <widget name="seekhint" position="1100,149" size="700,30" font="Regular;15"
+        <widget name="seekhint" position="1100,413" size="700,30" font="Regular;15"
                 foregroundColor="#7893A9" transparent="1" halign="right" />
 
-        <widget name="brand" position="32,194" size="520,26" font="Regular;15"
+        <widget name="brand" position="32,458" size="520,26" font="Regular;15"
                 foregroundColor="#66889C" transparent="1" />
 
-        <widget name="provider_badge" position="1170,188" size="135,32" font="Bold;17"
+        <widget name="provider_badge" position="1170,452" size="135,32" font="Bold;17"
                 foregroundColor="#35C96B" backgroundColor="#101B25" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#315B73" />
-        <widget name="mode" position="1315,188" size="140,32" font="Regular;16"
+        <widget name="mode" position="1315,452" size="140,32" font="Regular;16"
                 foregroundColor="#F1F6F9" backgroundColor="#101B25" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#315B73" />
-        <widget name="quality" position="1465,188" size="95,32" font="Regular;16"
+        <widget name="quality" position="1465,452" size="95,32" font="Regular;16"
                 foregroundColor="#D8E9F3" backgroundColor="#101B25" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#315B73" />
-        <widget name="codec_badge" position="1570,188" size="100,32" font="Regular;16"
+        <widget name="codec_badge" position="1570,452" size="100,32" font="Regular;16"
                 foregroundColor="#D8E9F3" backgroundColor="#101B25" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#315B73" />
-        <widget name="bitrate_badge" position="1680,188" size="120,32" font="Regular;16"
+        <widget name="bitrate_badge" position="1680,452" size="120,32" font="Regular;16"
                 foregroundColor="#D8E9F3" backgroundColor="#101B25" transparent="0"
                 halign="center" valign="center" borderWidth="1" borderColor="#315B73" />
 
         <!-- FIX7: ein ausklappbares Panel statt vier permanenten Spalten -->
-        <widget name="panel_bg" position="15,232" size="1810,252" font="Regular;1"
+        <widget name="panel_bg" position="15,0" size="1810,252" font="Regular;1"
                 foregroundColor="#091722" backgroundColor="#E0091722" transparent="0"
                 borderWidth="2" borderColor="#2B8CB8" zPosition="0" />
-        <widget name="panel_head" position="38,246" size="1745,34" font="Bold;22"
+        <widget name="panel_head" position="38,14" size="1745,34" font="Bold;22"
                 foregroundColor="#FFFFFF" transparent="1" zPosition="3" />
-        <widget name="panel_rule" position="38,284" size="1745,2" font="Regular;1"
+        <widget name="panel_rule" position="38,52" size="1745,2" font="Regular;1"
                 foregroundColor="#18A7E0" backgroundColor="#18A7E0" transparent="0" zPosition="2" />
-        <widget name="panel_body" position="42,300" size="1715,165" font="Regular;21"
+        <widget name="panel_body" position="42,68" size="1715,165" font="Regular;21"
                 foregroundColor="#E5F1F7" transparent="1" zPosition="3" />
 
         <!-- Kapitel-Vorschau: drei echte Server-Chapter-Images, falls vorhanden -->
-        <widget name="chapter_img0" position="70,305" size="300,169" alphatest="blend" scale="1" zPosition="4" />
-        <widget name="chapter_img1" position="570,305" size="300,169" alphatest="blend" scale="1" zPosition="4" />
-        <widget name="chapter_img2" position="1070,305" size="300,169" alphatest="blend" scale="1" zPosition="4" />
-        <widget name="chapter_txt0" position="382,318" size="170,135" font="Regular;20" foregroundColor="#DCEAF2" transparent="1" zPosition="4" />
-        <widget name="chapter_txt1" position="882,318" size="170,135" font="Regular;20" foregroundColor="#DCEAF2" transparent="1" zPosition="4" />
-        <widget name="chapter_txt2" position="1382,318" size="170,135" font="Regular;20" foregroundColor="#DCEAF2" transparent="1" zPosition="4" />
+        <widget name="chapter_img0" position="70,73" size="300,169" alphatest="blend" scale="1" zPosition="4" />
+        <widget name="chapter_img1" position="570,73" size="300,169" alphatest="blend" scale="1" zPosition="4" />
+        <widget name="chapter_img2" position="1070,73" size="300,169" alphatest="blend" scale="1" zPosition="4" />
+        <widget name="chapter_txt0" position="382,86" size="170,135" font="Regular;20" foregroundColor="#DCEAF2" transparent="1" zPosition="4" />
+        <widget name="chapter_txt1" position="882,86" size="170,135" font="Regular;20" foregroundColor="#DCEAF2" transparent="1" zPosition="4" />
+        <widget name="chapter_txt2" position="1382,86" size="170,135" font="Regular;20" foregroundColor="#DCEAF2" transparent="1" zPosition="4" />
     </screen>
     """
 

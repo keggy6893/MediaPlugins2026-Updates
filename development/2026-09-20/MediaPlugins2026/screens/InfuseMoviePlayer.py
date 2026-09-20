@@ -208,96 +208,17 @@ class InfuseMoviePlayer(MoviePlayer):
             return None
 
     def _seekSeconds(self, seconds):
-        """Direktes absolutes Spulen fuer HTTP/Direct-Play."""
+        """Spulen wie im bewaehrten Enigma2/EmbyFlow-Pfad: relativ in 90-kHz-PTS."""
         try:
             seek = self._getSeek()
             if not seek:
                 return
-            err_pos, pos = seek.getPlayPosition()
-            if err_pos:
-                return
-            target = max(0, int(pos) + int(seconds) * 90000)
-            try:
-                err_len, length = seek.getLength()
-                if not err_len and int(length or 0) > 0:
-                    target = min(target, max(0, int(length) - 90000))
-            except Exception:
-                pass
-            result = seek.seekTo(target)
-            log.info("Player direct seek %ss: %s -> %s (result=%s)",
-                     seconds, int(pos), target, result)
-            # Jellyfin Direct-Play auf dieser Box liefert bei seekTo() -1.
-            # In diesem Fall den HTTP-Stream serverseitig an der Zielposition
-            # neu starten. Jellyfin akzeptiert StartTimeTicks am Stream-Endpunkt.
-            if result == -1 and "jellyfin" in self._infuse_client.__class__.__name__.lower():
-                self._restartJellyfinAtPts(target)
+            amount = abs(int(seconds)) * 90000
+            direction = 1 if int(seconds) >= 0 else -1
+            result = seek.seekRelative(direction, amount)
+            log.info("Player relative seek %ss (result=%s)", seconds, result)
         except Exception as error:
-            log.warning("Player direct seek %ss fehlgeschlagen: %s", seconds, error)
-
-
-    def _restartJellyfinAtPts(self, pts):
-        try:
-            ticks = self._ptsToTicks(max(0, int(pts or 0)))
-            url = str(self._stream_url or "")
-            if not url:
-                return False
-            # Vorhandenen StartTimeTicks-Wert ersetzen, sonst anhaengen.
-            parts = url.split("?StartTimeTicks=", 1)
-            if len(parts) == 2:
-                tail = parts[1]
-                rest = tail.split("&", 1)
-                url = parts[0] + ("?" + rest[1] if len(rest) == 2 else "")
-            else:
-                needle = "&StartTimeTicks="
-                if needle in url:
-                    head, tail = url.split(needle, 1)
-                    rest = tail.split("&", 1)
-                    url = head + (("&" + rest[1]) if len(rest) == 2 else "")
-            sep = "&" if "?" in url else "?"
-            url = url + sep + "StartTimeTicks=" + str(ticks)
-
-            old_ref = self.session.nav.getCurrentlyPlayingServiceReference()
-            service_type = 4097
-            try:
-                if old_ref is not None:
-                    service_type = int(old_ref.type)
-            except Exception:
-                pass
-            ref = eServiceReference(service_type, 0, url)
-            try:
-                ref.setName(str(getattr(self._infuse_item, "title", "") or "Jellyfin"))
-            except Exception:
-                pass
-
-            self._stream_url = url
-            self._last_ticks = ticks
-            self._resume_done = False
-            self.session.nav.stopService()
-            self.session.nav.playService(ref)
-
-            # StartTimeTicks wird bei Direct-Play nicht von allen Jellyfin-
-            # Versionen/Containern als echter Byte-Seek umgesetzt. Nach dem
-            # Service-Neustart deshalb den normalen Enigma2-Seek erneut
-            # anwenden; der neu gestartete Service ist jetzt die frische
-            # Seek-Instanz.
-            def apply_after_restart():
-                try:
-                    new_seek = self._getSeek()
-                    if new_seek:
-                        result2 = new_seek.seekTo(self._ticksToPts(ticks))
-                        log.info("Jellyfin seek nach Service-Neustart: %.1fs result=%s",
-                                 float(ticks) / 10000000.0, result2)
-                except Exception as error:
-                    log.warning("Jellyfin seek nach Neustart fehlgeschlagen: %s", error)
-            self._resume_timer.stop()
-            self._resume_timer.callback[:] = []
-            self._resume_timer.callback.append(apply_after_restart)
-            self._resume_timer.start(1800, True)
-            log.info("Jellyfin server seek: Service-Neustart fuer %.1fs", float(ticks) / 10000000.0)
-            return True
-        except Exception as error:
-            log.warning("Jellyfin server seek fehlgeschlagen: %s", error)
-            return False
+            log.warning("Player relative seek %ss fehlgeschlagen: %s", seconds, error)
 
     def _getCurrentTicks(self):
         seek = self._getSeek()

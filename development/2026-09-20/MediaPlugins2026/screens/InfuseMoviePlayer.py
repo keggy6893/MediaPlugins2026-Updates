@@ -283,6 +283,13 @@ class InfuseMoviePlayer(MoviePlayer):
         except Exception:
             pass
         ticks = self._getCurrentTicks()
+        # RESUME-LOCAL2: denselben MediaItem sofort aktualisieren. Der Detail-Screen
+        # bekommt dadurch beim Zurueckkehren die echte Stop-Position, auch wenn
+        # Jellyfin/Emby das asynchrone Stopped-Reporting noch nicht verarbeitet hat.
+        try:
+            self._infuse_item.resume_ticks = max(0, int(ticks or 0))
+        except Exception:
+            pass
         try:
             self._infuse_client.report_playback_stopped(
                 self._infuse_item.id, ticks

@@ -501,8 +501,22 @@ class InfusePlayerOSD(Screen):
             seek = self.player._getSeek()
             if not seek:
                 return
-            direction = 1 if seconds >= 0 else -1
-            seek.seekRelative(direction, abs(int(seconds)) * 90000)
+            # SEEK-FIX1: Auf einigen Enigma2-Service-Backends ist seekRelative()
+            # fuer HTTP/Direct-Play wirkungslos. Deshalb die aktuelle PTS lesen
+            # und absolut mit seekTo() springen.
+            err_pos, pos = seek.getPlayPosition()
+            if err_pos:
+                return
+            target = max(0, int(pos) + (int(seconds) * 90000))
+            try:
+                err_len, length = seek.getLength()
+                if not err_len and int(length or 0) > 0:
+                    target = min(target, max(0, int(length) - 90000))
+            except Exception:
+                pass
+            result = seek.seekTo(target)
+            log.info("UnifiedPlayer OSD Seek %ss: %s -> %s (result=%s)",
+                     seconds, int(pos), target, result)
             self._updateProgress()
         except Exception as error:
             log.warning("UnifiedPlayer5 OSD Seek %ss fehlgeschlagen: %s", seconds, error)

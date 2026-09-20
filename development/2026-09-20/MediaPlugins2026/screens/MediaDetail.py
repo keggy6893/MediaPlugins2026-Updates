@@ -312,7 +312,14 @@ class MediaDetail(Screen):
         )
 
     def _onDetailLoaded(self, detail):
+        # RESUME-LOCAL3: Nach Rueckkehr aus dem Player kann Jellyfin/Emby fuer
+        # einen kurzen Moment noch die alte Position (oft 0) liefern. Die lokal
+        # gerade gemessene Player-Position darf dadurch nicht wieder verschwinden.
+        local_resume = int(getattr(self.item, "resume_ticks", 0) or 0)
         self.item.update_from_detail(detail)
+        server_resume = int(getattr(self.item, "resume_ticks", 0) or 0)
+        if local_resume >= 10 * 10000000 and server_resume < local_resume:
+            self.item.resume_ticks = local_resume
         self["description"].setText(self.item.overview or "")
         self._loadArtwork()
         self["genres"].setText(", ".join(self.item.genres or []))

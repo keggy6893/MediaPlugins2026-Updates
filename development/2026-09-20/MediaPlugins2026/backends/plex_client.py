@@ -263,7 +263,18 @@ class PlexClient(MediaServerClient):
         if self.address.rstrip("/").lower() == self.DISCOVERY_ADDRESS:
             self._discover_account_servers(callback, error_callback)
             return
-        self._login_candidates(self._candidate_base_urls(), callback, error_callback)
+        # A Plex2026-imported concrete endpoint may be paired with the Plex
+        # account token. PMS itself can require the server-specific accessToken
+        # returned by plex.tv /api/resources. Try the configured endpoint first;
+        # on failure resolve the account resources and retry with their tokens.
+        self._login_candidates(
+            self._candidate_base_urls(),
+            callback,
+            lambda direct_err: self._discover_account_servers(
+                callback,
+                lambda discovery_err: error_callback("%s / %s" % (direct_err, discovery_err)),
+            ),
+        )
 
     def _login_candidates(self, candidates, callback, error_callback, tokens=None):
         if not candidates:

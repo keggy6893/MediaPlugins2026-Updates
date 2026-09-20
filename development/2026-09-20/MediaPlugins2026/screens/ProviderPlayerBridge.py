@@ -144,70 +144,17 @@ def _open_jellyfin(session, item, client, start_ticks):
 
 
 def _open_emby(session, item, client, start_ticks):
-    """Use the installed EmbyFlowE2 player itself for Emby playback.
-
-    MediaPlugins2026 remains responsible for browsing/provider selection, while
-    Emby playback is handed to the proven EmbyFlowE2 player including its OSD,
-    subtitles, audio and chapter implementation.
-    """
+    """Route Emby through the same MediaPlugins2026 unified 4097 player."""
     try:
-        from Plugins.Extensions.EmbyFlowE2 import plugin as emby
-
-        fetch = getattr(emby, "fetch_stream_info", None)
-        player_cls = getattr(emby, "EmbyFlowMoviePlayer", None)
-        if not callable(fetch) or player_cls is None:
-            raise RuntimeError("EmbyFlowE2 Player-API nicht verfuegbar")
-
-        item_id = str(getattr(item, "id", "") or "").strip()
-        title = str(getattr(item, "title", "") or "Emby")
-        info = fetch(search_term=title, audio_mode="direct", item_id=item_id)
-        if not isinstance(info, dict) or not info.get("url"):
-            raise RuntimeError("EmbyFlowE2 lieferte keine Stream-URL")
-
-        # Preserve MediaPlugins resume position when EmbyFlow accepts it.
-        if start_ticks:
-            info.setdefault("start_ticks", int(start_ticks))
-            info.setdefault("position_ticks", int(start_ticks))
-
-        service_type = int(getattr(emby, "STREAM_SERVICE_TYPE", 4097) or 4097)
-        from enigma import eServiceReference
-        ref = eServiceReference(service_type, 0, str(info.get("url")))
-        try:
-            ref.setName(title)
-        except Exception:
-            pass
-
-        try:
-            old_ref = session.nav.getCurrentlyPlayingServiceReference()
-        except Exception:
-            old_ref = None
-
-        try:
-            session.nav.stopService()
-        except Exception:
-            pass
-
-        session.open(player_cls, ref, title, info, old_ref, False)
-        _bridge_log(
-            "EMBYFLOW_PLAYER_BASE1 opened item=%s title=%r"
-            % (item_id, title)
+        url = client.get_stream_url(item.id, item)
+        return _open_unified(
+            session, item, client, "emby", url, start_ticks, 4097,
+            {"url_source": "MediaPlugins EmbyClient",
+             "playback_path": "native-unified"},
         )
-        return True
     except Exception as error:
-        _bridge_log("EMBYFLOW_PLAYER_BASE1 failed: %s" % error)
-
-        # Keep the known MediaPlugins player as a safety fallback.
-        try:
-            url = client.get_stream_url(item.id, item)
-            return _open_unified(
-                session, item, client, "emby", url, start_ticks, 4097,
-                {"url_source": "MediaPlugins EmbyClient",
-                 "embyflow_player_error": str(error)},
-            )
-        except Exception as fallback_error:
-            _show_error(session, "emby", "%s; Fallback: %s" % (error, fallback_error))
-            return True
-
+        _show_error(session, "emby", error)
+        return True
 
 def _plex_seed(item):
     item_id = str(getattr(item, "id", "") or "").strip()

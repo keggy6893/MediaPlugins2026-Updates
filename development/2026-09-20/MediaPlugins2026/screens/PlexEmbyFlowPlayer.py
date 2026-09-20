@@ -10,11 +10,11 @@ from Plugins.Extensions.EmbyFlowE2 import plugin as _embyflow
 
 
 class PlexEmbyFlowMoviePlayer(_embyflow.EmbyFlowMoviePlayer):
-    def __init__(self, session, ref, title, playback_info, last_service, plex_client, media_item):
+    def __init__(self, session, ref, title, playback_info, last_service, plex_client, media_item, prestarted=False):
         self._mp2026_plex_client = plex_client
         self._mp2026_media_item = media_item
         _embyflow.EmbyFlowMoviePlayer.__init__(
-            self, session, ref, title, playback_info, last_service, False
+            self, session, ref, title, playback_info, last_service, bool(prestarted)
         )
 
     def send_emby_playback_report(self, endpoint, position_ticks=0):

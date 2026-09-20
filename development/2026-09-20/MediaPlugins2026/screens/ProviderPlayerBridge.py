@@ -286,10 +286,10 @@ def _open_plex(session, item, client, start_ticks):
     try:
         url = client.get_stream_url(item.id, item)
         if url:
-            return _open_unified(
-                session, item, client, "plex", url, start_ticks, 4097,
-                {"url_source": "MediaPlugins PlexClient",
-                 "playback_path": "native-unified"},
+            # Proven player/UI from screenshot 2: keep Plex on the existing
+            # PlexEmbyFlowMoviePlayer adapter instead of the experimental OSD.
+            return _open_plex_embyflow(
+                session, item, client, start_ticks, url, 4097, None
             )
     except Exception as error:
         local_error = str(error)
@@ -310,10 +310,8 @@ def _open_plex(session, item, client, start_ticks):
                 stream_url, full_item = direct_url(server, seed)
                 if stream_url:
                     service_type = int(getattr(plex, "STREAM_SERVICE_TYPE", 4097) or 4097)
-                    return _open_unified(
-                        session, item, client, "plex", stream_url, start_ticks, service_type,
-                        {"url_source": "Plex2026 fallback",
-                         "playback_path": "native-unified"},
+                    return _open_plex_embyflow(
+                        session, item, client, start_ticks, stream_url, service_type, full_item
                     )
             external_error = "Plex2026 lieferte keine Stream-URL"
         else:

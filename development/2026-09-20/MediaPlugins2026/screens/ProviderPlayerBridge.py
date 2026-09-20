@@ -132,11 +132,11 @@ def _open_unified(session, item, client, provider, stream_url, start_ticks,
 
 
 def _open_jellyfin(session, item, client, start_ticks):
+    """Jellyfin through the proven Bild-2 EmbyFlow-derived player UI."""
     try:
         url = client.get_stream_url(item.id, item)
-        return _open_unified(
-            session, item, client, "jellyfin", url, start_ticks, 4097,
-            {"url_source": "MediaPlugins JellyfinClient"},
+        return _open_plex_embyflow(
+            session, item, client, start_ticks, url, 4097, None
         )
     except Exception as error:
         _show_error(session, "jellyfin", error)

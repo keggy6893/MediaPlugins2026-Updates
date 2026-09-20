@@ -7,6 +7,7 @@
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX6_PANEL_ZORDER
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX7_BOTTOM_ALIGN
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX8_BASE_BOTTOM_PANEL_UP
+# MEDIAPLUGINS2026_UNIFIED_OSD_FIX9_TRANSPARENT_TOP
 
 from enigma import eTimer, iServiceInformation
 from Screens.Screen import Screen
@@ -36,7 +37,9 @@ class InfusePlayerOSD(Screen):
 
     skin = """
     <screen name="InfusePlayerOSD" position="40,580" size="1840,500"
-            flags="wfNoBorder" backgroundColor="#C0091622">
+            flags="wfNoBorder" backgroundColor="#00000000">
+        <!-- FIX9: nur der kompakte untere OSD-Bereich bekommt Hintergrund -->
+        <eLabel position="0,264" size="1840,236" backgroundColor="#C0091622" zPosition="-1" />
         <eLabel position="0,264" size="1840,2" backgroundColor="#18A7E0" zPosition="1" />
 
         <widget name="title" position="32,277" size="1050,42" font="Bold;34"

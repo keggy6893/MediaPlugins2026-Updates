@@ -1,16 +1,16 @@
 {
-  "version": "2026.1-r22",
-  "build": 2026091503,
+  "version": "2026.1-r23",
+  "build": 2026092001,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r22/enigma2-plugin-extensions-mediaplugins2026_2026.1-r22_all.ipk",
-  "sha256": "1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r23/enigma2-plugin-extensions-mediaplugins2026_2026.1-r23_all.ipk",
+  "sha256": "6fb9ce42f0ad6a815587906d6559866f271eb0ec3ab948511cdd50e8db7ef44d",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Crash beim Abbrechen der Servertyp-Auswahl behoben",
-    "Callback akzeptiert leeren bzw. None-Rueckgabewert",
-    "ServerConfig Callback gegen leere Rueckgabewerte abgesichert",
-    "Veraltete card4 Skin-Komponenten entfernt",
-    "Poster-Pipeline und Token-Redaction aus r21 bleiben erhalten"
+    "Poster-Cache-Validierung repariert und live verifiziert",
+    "Home-Poster-Supervisor aktualisiert",
+    "6-Stunden-Content-Refresh fuer die Home-Inhalte hinzugefuegt",
+    "Funktionierenden Jellyfin-Client beibehalten",
+    "r22 Settings-Crashfix und Token-Redaction bleiben erhalten"
   ]
 }

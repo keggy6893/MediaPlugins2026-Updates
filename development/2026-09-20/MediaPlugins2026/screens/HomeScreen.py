@@ -853,6 +853,21 @@ class HomeScreen(Screen):
         # Die Home-Uhr wird sekündlich aus der lokalen Box-Zeit aktualisiert.
         # Vorher wurde sie nur einmal bei onLayoutFinish gesetzt.
         self._clock_timer = eTimer()
+
+        # MEDIAPLUGINS2026_CONTENT_REFRESH_6H1
+        # Solange der Home-Screen offen bleibt, Filme/Serien/Dokus aller
+        # eingerichteten Provider spaetestens alle sechs Stunden neu vom
+        # Server einlesen. Beim normalen erneuten Oeffnen laedt loadHome()
+        # ohnehin sofort frisch.
+        self._content_refresh_timer = eTimer()
+        try:
+            self._content_refresh_timer.callback.append(self._contentRefresh6h)
+        except Exception:
+            try:
+                self._content_refresh_timer.timeout.connect(self._contentRefresh6h)
+            except Exception:
+                pass
+
         try:
             self._clock_timer.callback.append(self._updateClock)
         except Exception:
@@ -965,6 +980,10 @@ class HomeScreen(Screen):
             self.onClose.append(self._stopClockTimer)
         except Exception:
             pass
+        try:
+            self.onClose.append(self._stopContentRefresh6h)
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Laden / Backend
@@ -973,6 +992,33 @@ class HomeScreen(Screen):
         self._updateClock()
         self._refreshFocus()
         log.safe_call(self.loadHome)
+        self._scheduleContentRefresh6h()
+
+    def _scheduleContentRefresh6h(self):
+        try:
+            self._content_refresh_timer.stop()
+        except Exception:
+            pass
+        try:
+            self._content_refresh_timer.start(6 * 60 * 60 * 1000, True)
+            log.info("Content-Refresh: naechste Film/Serien/Doku-Pruefung in 6 Stunden")
+        except Exception as exc:
+            log.warning("Content-Refresh Timer konnte nicht gestartet werden: %s", exc)
+
+    def _contentRefresh6h(self):
+        # loadHome() fragt Emby/Jellyfin/Plex erneut ab und erneuert dabei
+        # Home-Snapshot, Neu hinzugefuegt, Bibliotheken und Providerstatus.
+        log.info("Content-Refresh: 6h-Pruefung fuer Filme/Serien/Dokus gestartet")
+        try:
+            self.loadHome()
+        finally:
+            self._scheduleContentRefresh6h()
+
+    def _stopContentRefresh6h(self):
+        try:
+            self._content_refresh_timer.stop()
+        except Exception:
+            pass
 
     def _updateClock(self):
         try:

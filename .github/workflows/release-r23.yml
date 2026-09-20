@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION: 2026.1-r23
-      BUILD: '2026091504'
+      BUILD: '2026092001'
       PACKAGE: enigma2-plugin-extensions-mediaplugins2026
       R22_SHA256: 1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2
       R23_CORE_SHA256: 66d85096bb0b1f321df7aac422fd55cc221880f895c38be240265a1b4c2cfc62
@@ -62,6 +62,11 @@ jobs:
           PY
 
           python /tmp/mediaplugins2026_r23_patch_core.py "$ROOT"
+
+          # Promote the exact Home/poster files verified live on 2026-09-20.
+          # Do not replace jellyfin_client.py or player files here.
+          cp development/2026-09-20/MediaPlugins2026/screens/HomeScreen.py "$ROOT/screens/HomeScreen.py"
+          cp development/2026-09-20/MediaPlugins2026/utils/image_cache.py "$ROOT/utils/image_cache.py"
 
           find "$ROOT" -type f \( -name '*.before_*' -o -name '*.pyc' -o -name '*.bak' -o -name '*~' \) -delete
           find "$ROOT" -type d -name '__pycache__' -prune -exec rm -rf {} +
@@ -112,6 +117,9 @@ jobs:
               'r21 Poster Home': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' in home,
               'r21 Poster Cache': 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_CACHE' in cache,
               'r21 Token Redaction': 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' in http,
+              'Poster Supervisor live fix': 'MEDIAPLUGINS2026_HOME_POSTER_SUPERVISOR1' in home,
+              'Poster Validator 128 Byte': 'return self._valid_image_bytes(handle.read(128))' in cache,
+              '6h Content Refresh': '_contentRefresh6h' in home and '6 * 60 * 60 * 1000' in home,
 
               'Internal Provider Libraries': 'MEDIAPLUGINS2026_PROVIDER_LIBRARIES_INTERNAL1' in home,
               'Internal Provider OK': 'self._openProviderLibraries(self._serverSwitchProvider())' in home,
@@ -204,6 +212,10 @@ jobs:
           grep -q 'MEDIAPLUGINS2026_SETTINGS_CRASHFIX1' "$ROOT/screens/Settings.py"
           grep -q 'MEDIAPLUGINS2026_POSTER_PIPELINE_R21_HOME' "$ROOT/screens/HomeScreen.py"
           grep -q 'MEDIAPLUGINS2026_HTTP_LOG_REDACT1' "$ROOT/backends/http_helper.py"
+          grep -q 'MEDIAPLUGINS2026_HOME_POSTER_SUPERVISOR1' "$ROOT/screens/HomeScreen.py"
+          grep -q '_contentRefresh6h' "$ROOT/screens/HomeScreen.py"
+          grep -q 'handle.read(128)' "$ROOT/utils/image_cache.py"
+          ! grep -q 'handle.read(16)' "$ROOT/utils/image_cache.py"
 
           grep -q 'MEDIAPLUGINS2026_PROVIDER_LIBRARIES_INTERNAL1' "$ROOT/screens/HomeScreen.py"
           grep -q 'MEDIAPLUGINS2026_MEDIASERVER_TARGETSTYLE4' "$ROOT/screens/ServerFolderBrowser.py"
@@ -231,7 +243,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES=$'Media Plugins 2026 — 2026.1-r23\n\nCinema-/Provider-Update:\n\n- "Zu Server wechseln" öffnet die Bibliotheken des gewählten Emby/Jellyfin/Plex-Anbieters jetzt intern in Media Plugins 2026\n- neuer Cinema-Medienserver-Hub mit Themenbildern, 3D/4K-Badges, echter Bibliotheksanzahl und dezenterem Fokus\n- neuer Cinema-LibraryBrowser mit A-Z, moderner Detailansicht, Rating, Technikzeile und ähnlichen Titeln\n- Emby/Jellyfin Similar-Items und Plex Related werden providerseitig geladen\n- ähnliche Titel sind mit der Fernbedienung anwählbar und intern öffnbar\n- echter Remote-Servername wird dynamisch angezeigt (Emby/Jellyfin ServerName, Plex friendlyName)\n- mehrere Clients desselben Providers bleiben eindeutig unterscheidbar\n- r22 Settings-Crashfix sowie r21 Poster-Pipeline und Token-Redaction bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R23_SHA256}"
+          NOTES=$'Media Plugins 2026 — 2026.1-r23\n\nCinema-/Provider-Update:\n\n- "Zu Server wechseln" öffnet die Bibliotheken des gewählten Emby/Jellyfin/Plex-Anbieters jetzt intern in Media Plugins 2026\n- neuer Cinema-Medienserver-Hub mit Themenbildern, 3D/4K-Badges, echter Bibliotheksanzahl und dezenterem Fokus\n- neuer Cinema-LibraryBrowser mit A-Z, moderner Detailansicht, Rating, Technikzeile und ähnlichen Titeln\n- Emby/Jellyfin Similar-Items und Plex Related werden providerseitig geladen\n- ähnliche Titel sind mit der Fernbedienung anwählbar und intern öffnbar\n- echter Remote-Servername wird dynamisch angezeigt (Emby/Jellyfin ServerName, Plex friendlyName)\n- mehrere Clients desselben Providers bleiben eindeutig unterscheidbar\n- Poster-Cache/Poster-Supervisor live verifiziert; 6h Content-Refresh enthalten\n- r22 Settings-Crashfix sowie r21 Token-Redaction bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R23_SHA256}"
 
           if gh release view "$VERSION" >/dev/null 2>&1; then
             gh release upload "$VERSION" "$R23_IPK" --clobber

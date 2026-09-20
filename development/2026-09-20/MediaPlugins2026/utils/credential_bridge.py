@@ -306,22 +306,36 @@ def _known_plex_json_candidates():
     return result
 
 
-
 def _plex2026_candidates():
-    """Import the standalone Plex2026 account token without user input.
+    """Import Plex2026's current selected server and account token read-only.
 
-    Plex2026Phase1 stores the account token in /etc/enigma2/plex2026_*.json.
-    Those files intentionally contain no PMS address.  Media Plugins 2026 therefore
-    imports the token with a discovery sentinel; PlexClient resolves the actual
-    Plex Media Server through plex.tv /api/resources on first connection.
-
-    The source files are read-only and never modified.
+    Plex2026Phase1 persists the last selected/tested PMS in
+    /etc/enigma2/plex2026_server.json.  Prefer that concrete endpoint so a
+    server change in Plex2026 is mirrored into Media Plugins 2026 immediately.
+    Fall back to account discovery only when no usable selected endpoint exists.
     """
-    paths = (
+    token_paths = (
         "/etc/enigma2/plex2026_account_token.json",
         "/etc/enigma2/plex2026_token.json",
     )
-    for path in paths:
+    server_path = "/etc/enigma2/plex2026_server.json"
+
+    server_data = {}
+    if os.path.isfile(server_path):
+        try:
+            with open(server_path, "r", encoding="utf-8", errors="replace") as handle:
+                loaded = json.load(handle)
+            if isinstance(loaded, dict):
+                server_data = loaded
+        except Exception as exc:
+            log.warning("CredentialBridge: Plex2026 Server-Datei nicht lesbar: %s", exc)
+
+    selected_uri = _text(server_data.get("uri") or server_data.get("url") or server_data.get("address")).rstrip("/")
+    selected_token = _text(server_data.get("token") or server_data.get("auth_token"))
+    if not selected_uri.startswith(("http://", "https://")):
+        selected_uri = ""
+
+    for path in token_paths:
         if not os.path.isfile(path):
             continue
         try:
@@ -332,15 +346,14 @@ def _plex2026_candidates():
             continue
         if not isinstance(data, dict):
             continue
-        token = _text(data.get("auth_token"))
+        account_token = _text(data.get("auth_token") or data.get("token"))
+        token = selected_token or account_token
         if not token:
             continue
-        # Do not log the token. client_identifier is deliberately not required:
-        # our Plex backend uses its own stable X-Plex-Client-Identifier.
         return [{
             "protocol": "plex",
             "name": "Plex2026",
-            "address": "plex://account-discovery",
+            "address": selected_uri or "plex://account-discovery",
             "port": "",
             "username": "",
             "password": "",
@@ -349,6 +362,23 @@ def _plex2026_candidates():
             "https": "auto",
             "path": "",
             "source": "plex2026:%s" % path,
+        }]
+
+    # Some Plex2026 builds keep the usable server token only in the selected
+    # server cache.  Import it as a last resort without exposing it in logs.
+    if selected_uri and selected_token:
+        return [{
+            "protocol": "plex",
+            "name": "Plex2026",
+            "address": selected_uri,
+            "port": "",
+            "username": "",
+            "password": "",
+            "token": selected_token,
+            "user_id": "plex",
+            "https": "auto",
+            "path": "",
+            "source": "plex2026:/etc/enigma2/plex2026_account_token.json",
         }]
     return []
 

@@ -71,9 +71,20 @@ class InfuseMoviePlayer(MoviePlayer):
 
         # Hohe Prioritaet: OK soll unser OSD zeigen statt das Standard-MoviePlayer-OSD.
         self["infuse_osd_actions"] = ActionMap(
-            ["OkCancelActions", "InfobarActions", "ColorActions"],
+            ["OkCancelActions", "DirectionActions", "NumberActions", "InfobarActions", "InfobarSeekActions", "ColorActions"],
             {
                 "ok": self._showInfuseOSD,
+                # SEEK-FIX2: Spulen muss auch funktionieren, wenn das OSD gerade
+                # ausgeblendet ist. Die Tasten werden deshalb direkt vom Player
+                # abgefangen und nicht nur vom modalen InfusePlayerOSD.
+                "left": lambda: self._seekSeconds(-5),
+                "right": lambda: self._seekSeconds(5),
+                "1": lambda: self._seekSeconds(-10),
+                "3": lambda: self._seekSeconds(10),
+                "4": lambda: self._seekSeconds(-30),
+                "6": lambda: self._seekSeconds(30),
+                "7": lambda: self._seekSeconds(-300),
+                "9": lambda: self._seekSeconds(300),
                 "green": self._openAudioSelection,
                 "yellow": self._openSubtitleSelection,
             },
@@ -195,6 +206,29 @@ class InfuseMoviePlayer(MoviePlayer):
             return service and service.seek()
         except Exception:
             return None
+
+    def _seekSeconds(self, seconds):
+        """Direktes absolutes Spulen fuer HTTP/Direct-Play."""
+        try:
+            seek = self._getSeek()
+            if not seek:
+                return
+            err_pos, pos = seek.getPlayPosition()
+            if err_pos:
+                return
+            target = max(0, int(pos) + int(seconds) * 90000)
+            try:
+                err_len, length = seek.getLength()
+                if not err_len and int(length or 0) > 0:
+                    target = min(target, max(0, int(length) - 90000))
+            except Exception:
+                pass
+            result = seek.seekTo(target)
+            log.info("Player direct seek %ss: %s -> %s (result=%s)",
+                     seconds, int(pos), target, result)
+        except Exception as error:
+            log.warning("Player direct seek %ss fehlgeschlagen: %s", seconds, error)
+
 
     def _getCurrentTicks(self):
         seek = self._getSeek()

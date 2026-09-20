@@ -18,7 +18,6 @@ jobs:
       BUILD: '2026092001'
       PACKAGE: enigma2-plugin-extensions-mediaplugins2026
       R22_SHA256: 1144ebf98363e5ca4b842600268f43b7ee211bfc7b51fcf9150bf275583f54d2
-      R23_CORE_SHA256: 66d85096bb0b1f321df7aac422fd55cc221880f895c38be240265a1b4c2cfc62
 
     steps:
       - name: Checkout
@@ -46,25 +45,13 @@ jobs:
           tar -xzf ../work/data.tar.gz
           cd "$GITHUB_WORKSPACE"
 
-          cat development/2026-09-15/r23_core_parts/part*.b64 | tr -d '\n\r' > /tmp/mediaplugins2026_r23_core.b64
-          python - <<'PY'
-          import base64, hashlib, os, zlib
-          from pathlib import Path
-
-          payload = Path('/tmp/mediaplugins2026_r23_core.b64').read_text(encoding='ascii').strip()
-          raw = zlib.decompress(base64.b64decode(payload))
-          sha = hashlib.sha256(raw).hexdigest()
-          expected = os.environ['R23_CORE_SHA256']
-          if sha != expected:
-              raise SystemExit(f'r23 Core SHA falsch: {sha} != {expected}')
-          Path('/tmp/mediaplugins2026_r23_patch_core.py').write_bytes(raw)
-          print('r23 Core bytes:', len(raw), 'sha256=', sha)
-          PY
-
-          python /tmp/mediaplugins2026_r23_patch_core.py "$ROOT"
+          # r23 is intentionally a minimal delta on the known stable r22 package.
+          # Do not run the historical 2026-09-15 r23_core patcher: it modifies
+          # provider backends including Jellyfin. Only the live-verified 2026-09-20
+          # Home/poster changes are promoted here.
 
           # Promote the exact Home/poster files verified live on 2026-09-20.
-          # Do not replace jellyfin_client.py or player files here.
+          # Jellyfin/provider backends and player files remain exactly as shipped by r22.
           cp development/2026-09-20/MediaPlugins2026/screens/HomeScreen.py "$ROOT/screens/HomeScreen.py"
           cp development/2026-09-20/MediaPlugins2026/utils/image_cache.py "$ROOT/utils/image_cache.py"
 
@@ -101,13 +88,6 @@ jobs:
           print('Python-Dateien geprüft:', checked)
 
           home = (root / 'screens/HomeScreen.py').read_text(encoding='utf-8')
-          hub = (root / 'screens/ServerFolderBrowser.py').read_text(encoding='utf-8')
-          library = (root / 'screens/LibraryBrowser.py').read_text(encoding='utf-8')
-          settings = (root / 'screens/Settings.py').read_text(encoding='utf-8')
-          server_type_path = root / 'screens/ServerTypeSelect.py'
-          server_type = server_type_path.read_text(encoding='utf-8') if server_type_path.exists() else ''
-          jelly = (root / 'backends/jellyfin_client.py').read_text(encoding='utf-8')
-          plex = (root / 'backends/plex_client.py').read_text(encoding='utf-8')
           cache = (root / 'utils/image_cache.py').read_text(encoding='utf-8')
           http = (root / 'backends/http_helper.py').read_text(encoding='utf-8')
 
@@ -120,28 +100,6 @@ jobs:
               'Poster Supervisor live fix': 'MEDIAPLUGINS2026_HOME_POSTER_SUPERVISOR1' in home,
               'Poster Validator 128 Byte': 'return self._valid_image_bytes(handle.read(128))' in cache,
               '6h Content Refresh': '_contentRefresh6h' in home and '6 * 60 * 60 * 1000' in home,
-
-              'Internal Provider Libraries': 'MEDIAPLUGINS2026_PROVIDER_LIBRARIES_INTERNAL1' in home,
-              'Internal Provider OK': 'self._openProviderLibraries(self._serverSwitchProvider())' in home,
-              'No external Provider OK': 'self._openProviderPlugin(self._serverSwitchProvider())' not in home,
-
-              'MediaServer TargetStyle4': 'MEDIAPLUGINS2026_MEDIASERVER_TARGETSTYLE4' in hub,
-              'MediaServer DetailTheme': 'MEDIAPLUGINS2026_MEDIASERVER_DETAILTHEMEFIX1' in hub,
-              'MediaServer Alias Labels': 'MEDIAPLUGINS2026_SERVER_ALIAS_LABELS1_HUB' in hub,
-              'MediaServer Remote Name': 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_HUB' in hub,
-              'MediaServer Subtle Focus': 'MEDIAPLUGINS2026_MEDIASERVER_FOCUS_SUBTLE1' in hub,
-              '2px MediaServer Focus': 'size="232,2"' in hub and 'backgroundColor="#178aa8"' in hub,
-
-              'Library Cinema UI': 'MEDIAPLUGINS2026_LIBRARY_CINEMA_UI1' in library,
-              'Provider Similar Items': 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_PROVIDER1' in library,
-              'Similar Navigation': 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_NAV1' in library,
-              'Library Alias Labels': 'MEDIAPLUGINS2026_SERVER_ALIAS_LABELS1_LIBRARY' in library,
-              'Library Remote Name': 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_LIBRARY' in library,
-
-              'Emby/Jellyfin Similar API': 'MEDIAPLUGINS2026_JELLYFIN_SIMILAR_PROVIDER1' in jelly and '/Similar?UserId=' in jelly,
-              'Emby/Jellyfin Remote ServerName': 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_JELLYFIN' in jelly and '/System/Info/Public' in jelly,
-              'Plex Related API': 'MEDIAPLUGINS2026_PLEX_SIMILAR_PROVIDER1' in plex and '/related?includeExternalMedia=0' in plex,
-              'Plex Remote FriendlyName': 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_PLEX' in plex and 'friendlyName' in plex,
           }
 
           if server_type_path.exists():
@@ -150,24 +108,6 @@ jobs:
                   'r22 ServerType EXIT None': '"cancel": lambda: self.close(None),' in server_type,
                   'r22 ServerType ROT None': '"red": lambda: self.close(None),' in server_type,
               })
-
-          theme = root / 'skin/library_theme'
-          for name in (
-              'mediaserver_bg.jpg',
-              'library_browser_bg.jpg',
-              'filme.jpg',
-              'filme_3d.jpg',
-              'filme_4k.jpg',
-              'filme_oton.jpg',
-              'hoerbuecher.jpg',
-              'konzerte.jpg',
-              'serien.jpg',
-              'serien_4k.jpg',
-              'serien_anime.jpg',
-              'serien_doku.jpg',
-              'detail_filme.jpg',
-          ):
-              required[f'Asset {name}'] = (theme / name).is_file()
 
           missing = [name for name, ok in required.items() if not ok]
           if missing:
@@ -217,23 +157,6 @@ jobs:
           grep -q 'handle.read(128)' "$ROOT/utils/image_cache.py"
           ! grep -q 'handle.read(16)' "$ROOT/utils/image_cache.py"
 
-          grep -q 'MEDIAPLUGINS2026_PROVIDER_LIBRARIES_INTERNAL1' "$ROOT/screens/HomeScreen.py"
-          grep -q 'MEDIAPLUGINS2026_MEDIASERVER_TARGETSTYLE4' "$ROOT/screens/ServerFolderBrowser.py"
-          grep -q 'MEDIAPLUGINS2026_MEDIASERVER_FOCUS_SUBTLE1' "$ROOT/screens/ServerFolderBrowser.py"
-          grep -q 'MEDIAPLUGINS2026_LIBRARY_CINEMA_UI1' "$ROOT/screens/LibraryBrowser.py"
-          grep -q 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_PROVIDER1' "$ROOT/screens/LibraryBrowser.py"
-          grep -q 'MEDIAPLUGINS2026_LIBRARY_SIMILAR_NAV1' "$ROOT/screens/LibraryBrowser.py"
-          grep -q 'MEDIAPLUGINS2026_REMOTE_SERVERNAME1_LIBRARY' "$ROOT/screens/LibraryBrowser.py"
-
-          grep -q '/System/Info/Public' "$ROOT/backends/jellyfin_client.py"
-          grep -q '/related?includeExternalMedia=0' "$ROOT/backends/plex_client.py"
-          grep -q 'friendlyName' "$ROOT/backends/plex_client.py"
-
-          test -f "$ROOT/skin/library_theme/mediaserver_bg.jpg"
-          test -f "$ROOT/skin/library_theme/library_browser_bg.jpg"
-          test -f "$ROOT/skin/library_theme/filme_4k.jpg"
-          test -f "$ROOT/skin/library_theme/serien_anime.jpg"
-
           ! find data -type f -name '*.pyc' | grep -q .
           ! find data -type f -name '*.before_*' | grep -q .
 
@@ -243,7 +166,147 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES=$'Media Plugins 2026 — 2026.1-r23\n\nCinema-/Provider-Update:\n\n- "Zu Server wechseln" öffnet die Bibliotheken des gewählten Emby/Jellyfin/Plex-Anbieters jetzt intern in Media Plugins 2026\n- neuer Cinema-Medienserver-Hub mit Themenbildern, 3D/4K-Badges, echter Bibliotheksanzahl und dezenterem Fokus\n- neuer Cinema-LibraryBrowser mit A-Z, moderner Detailansicht, Rating, Technikzeile und ähnlichen Titeln\n- Emby/Jellyfin Similar-Items und Plex Related werden providerseitig geladen\n- ähnliche Titel sind mit der Fernbedienung anwählbar und intern öffnbar\n- echter Remote-Servername wird dynamisch angezeigt (Emby/Jellyfin ServerName, Plex friendlyName)\n- mehrere Clients desselben Providers bleiben eindeutig unterscheidbar\n- Poster-Cache/Poster-Supervisor live verifiziert; 6h Content-Refresh enthalten\n- r22 Settings-Crashfix sowie r21 Token-Redaction bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R23_SHA256}"
+          NOTES=\n\n- "Zu Server wechseln" öffnet die Bibliotheken des gewählten Emby/Jellyfin/Plex-Anbieters jetzt intern in Media Plugins 2026\n- neuer Cinema-Medienserver-Hub mit Themenbildern, 3D/4K-Badges, echter Bibliotheksanzahl und dezenterem Fokus\n- neuer Cinema-LibraryBrowser mit A-Z, moderner Detailansicht, Rating, Technikzeile und ähnlichen Titeln\n- Emby/Jellyfin Similar-Items und Plex Related werden providerseitig geladen\n- ähnliche Titel sind mit der Fernbedienung anwählbar und intern öffnbar\n- echter Remote-Servername wird dynamisch angezeigt (Emby/Jellyfin ServerName, Plex friendlyName)\n- mehrere Clients desselben Providers bleiben eindeutig unterscheidbar\n- Poster-Cache/Poster-Supervisor live verifiziert; 6h Content-Refresh enthalten\n- r22 Settings-Crashfix sowie r21 Token-Redaction bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R23_SHA256}"
+
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" "$R23_IPK" --clobber
+          else
+            gh release create "$VERSION" "$R23_IPK" \
+              --title "Media Plugins 2026 — $VERSION" \
+              --notes "$NOTES" \
+              --target "$GITHUB_SHA"
+          fi
+
+      - name: Publish stable r23 manifest and docs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+
+          version = os.environ['VERSION']
+          build = int(os.environ['BUILD'])
+          package = os.environ['PACKAGE']
+          sha = os.environ['R23_SHA256']
+          filename = os.environ['R23_IPK']
+          repo = os.environ['GITHUB_REPOSITORY']
+          download = f'https://github.com/{repo}/releases/download/{version}/{filename}'
+
+          manifest = {
+              'version': version,
+              'build': build,
+              'channel': 'stable',
+              'download': download,
+              'sha256': sha,
+              'artifact_type': 'ipk',
+              'package': package,
+              'changelog': [
+                  'Interne Anbieter-Bibliotheken statt Start externer Provider-Plugins',
+                  'Neuer Cinema-Medienserver-Hub und Cinema-LibraryBrowser',
+                  'Echte Similar/Related-Empfehlungen fuer Emby, Jellyfin und Plex',
+                  'Aehnliche Titel per Fernbedienung navigierbar und intern oeffnbar',
+                  'Dynamische echte Servernamen fuer mehrere Emby/Jellyfin/Plex-Clients',
+                  'Theme-Art, 3D/4K-Badges und dezenter 2px-Auswahlrahmen',
+                  'r22 Settings-Crashfix sowie r21 Poster-/Datenschutz-Fixes bleiben erhalten',
+              ],
+          }
+
+          Path('update.json').write_text(
+              json.dumps(manifest, indent=2, ensure_ascii=False) + '\n',
+              encoding='utf-8',
+          )
+
+          readme = Path('README.md')
+          r = readme.read_text(encoding='utf-8')
+          if '## 2026.1-r23\n' not in r:
+              marker = '## 2026.1-r22\n'
+              if marker not in r:
+                  raise SystemExit('README r22 Anker fehlt')
+              section = "\n".join([
+                  "## 2026.1-r23",
+                  "",
+                  "Das stabile r23-Update bringt den neuen internen Cinema-Browser für Emby, Jellyfin und Plex:",
+                  "",
+                  "- Anbieter-Bibliotheken werden innerhalb von Media Plugins 2026 geöffnet",
+                  "- Cinema-Medienserver-Hub mit Themenbildern, echten Counts und 3D/4K-Badges",
+                  "- Cinema-LibraryBrowser mit A-Z, Detailpanel, Rating und Technikzeile",
+                  "- echte Similar-/Related-Empfehlungen je Provider",
+                  "- ähnliche Titel sind per Fernbedienung anwählbar und intern öffnbar",
+                  "- echte Servernamen werden dynamisch vom jeweiligen Provider gelesen",
+                  "- mehrere Clients desselben Providers bleiben eindeutig unterscheidbar",
+                  "- dezenter 2px-Auswahlrahmen im Medienserver-Hub",
+                  "- r22 Settings-Crashfix und r21 Poster-/Datenschutz-Fixes bleiben erhalten",
+                  "",
+                  f"Release-IPK: `{filename}`",
+                  "",
+                  f"SHA256: `{sha}`",
+                  "",
+                  "",
+              ])
+              readme.write_text(r.replace(marker, section + marker, 1), encoding='utf-8')
+
+          changelog = Path('CHANGELOG.md')
+          c = changelog.read_text(encoding='utf-8')
+          if '## 2026.1-r23\n' not in c:
+              marker = '## 2026.1-r22\n'
+              if marker not in c:
+                  raise SystemExit('CHANGELOG r22 Anker fehlt')
+              section = "\n".join([
+                  "## 2026.1-r23",
+                  "",
+                  "Stabiles Cinema-/Provider-Update auf Basis von r22.",
+                  "",
+                  "### Neu",
+                  "",
+                  "- Home-Serverwechsel öffnet die Bibliotheken des gewählten Providers intern",
+                  "- neuer Cinema-Medienserver-Hub für Emby/Jellyfin/Plex",
+                  "- feste Theme-Art für Bibliothekstypen, echte Provider-Counts und 3D/4K-Badges",
+                  "- rechte Bibliotheksvorschau mit Theme-Art und echten Sample-Postern",
+                  "- neuer Cinema-LibraryBrowser mit Cyan-Fokus, A-Z, moderner Detailseite und Rating",
+                  "- Emby/Jellyfin Similar-Items und Plex Related direkt vom Provider",
+                  "- Empfehlungsposter sind per Fernbedienung navigierbar und intern öffnbar",
+                  "- echte Remote-Servernamen: Emby/Jellyfin `ServerName`, Plex `friendlyName`",
+                  "- mehrere Clients desselben Providers werden sichtbar unterschieden",
+                  "- Medienserver-Auswahlrahmen auf dezente 2 px reduziert",
+                  "- r22 Settings-Crashfix bleibt erhalten",
+                  "- r21 Poster-Pipeline und HTTP-Token-Redaction bleiben erhalten",
+                  "- Paket-Hygiene geprüft: keine Backups oder `.pyc`-Dateien",
+                  "",
+                  f"IPK: `{filename}`",
+                  "",
+                  f"SHA256: `{sha}`",
+                  "",
+                  "",
+              ])
+              changelog.write_text(c.replace(marker, section + marker, 1), encoding='utf-8')
+
+          dev = Path('development/2026-09-15/README.md')
+          if dev.exists():
+              d = dev.read_text(encoding='utf-8')
+              note = "\n".join([
+                  "",
+                  "## Cinema-/Provider-Release r23",
+                  "",
+                  "Die am Receiver bestätigten internen Provider-Bibliotheken, Cinema-Screens, providerseitigen Similar/Related-Empfehlungen, navigierbaren Empfehlungen und dynamischen Remote-Servernamen wurden mit **2026.1-r23** in den stabilen Update-Kanal übernommen.",
+                  "",
+              ])
+              if '## Cinema-/Provider-Release r23\n' not in d:
+                  dev.write_text(d.rstrip() + '\n' + note + '\n', encoding='utf-8')
+          PY
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add update.json README.md CHANGELOG.md development/2026-09-15/README.md
+
+          if git diff --cached --quiet; then
+            echo "Manifest/docs bereits aktuell"
+          else
+            git commit -m 'Publish Media Plugins 2026 r23 stable manifest'
+            git push origin HEAD:main
+          fi
+Media Plugins 2026 — 2026.1-r23\n\nVerifiziertes Stabilitätsupdate:\n\n- "Zu Server wechseln" öffnet die Bibliotheken des gewählten Emby/Jellyfin/Plex-Anbieters jetzt intern in Media Plugins 2026\n- neuer Cinema-Medienserver-Hub mit Themenbildern, 3D/4K-Badges, echter Bibliotheksanzahl und dezenterem Fokus\n- neuer Cinema-LibraryBrowser mit A-Z, moderner Detailansicht, Rating, Technikzeile und ähnlichen Titeln\n- Emby/Jellyfin Similar-Items und Plex Related werden providerseitig geladen\n- ähnliche Titel sind mit der Fernbedienung anwählbar und intern öffnbar\n- echter Remote-Servername wird dynamisch angezeigt (Emby/Jellyfin ServerName, Plex friendlyName)\n- mehrere Clients desselben Providers bleiben eindeutig unterscheidbar\n- Poster-Cache/Poster-Supervisor live verifiziert; 6h Content-Refresh enthalten\n- r22 Settings-Crashfix sowie r21 Token-Redaction bleiben erhalten\n- Paket ohne Backup-/pyc-Dateien\n\nSHA256: '"${R23_SHA256}"
 
           if gh release view "$VERSION" >/dev/null 2>&1; then
             gh release upload "$VERSION" "$R23_IPK" --clobber

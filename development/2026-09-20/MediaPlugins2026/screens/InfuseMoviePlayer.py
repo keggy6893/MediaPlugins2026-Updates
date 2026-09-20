@@ -208,17 +208,15 @@ class InfuseMoviePlayer(MoviePlayer):
             return None
 
     def _seekSeconds(self, seconds):
-        """Spulen wie im bewaehrten Enigma2/EmbyFlow-Pfad: relativ in 90-kHz-PTS."""
+        """Nativer Enigma2/MoviePlayer-Seek-Pfad."""
         try:
-            seek = self._getSeek()
-            if not seek:
-                return
-            amount = abs(int(seconds)) * 90000
-            direction = 1 if int(seconds) >= 0 else -1
-            result = seek.seekRelative(direction, amount)
-            log.info("Player relative seek %ss (result=%s)", seconds, result)
+            pts = int(seconds) * 90000
+            # InfoBarSeek.doSeekRelative() prueft den aktuellen Service und
+            # fuehrt den Sprung ueber den nativen MoviePlayer-Pfad aus.
+            self.doSeekRelative(pts)
+            log.info("Player native doSeekRelative %ss (%s PTS)", seconds, pts)
         except Exception as error:
-            log.warning("Player relative seek %ss fehlgeschlagen: %s", seconds, error)
+            log.warning("Player native seek %ss fehlgeschlagen: %s", seconds, error)
 
     def _getCurrentTicks(self):
         seek = self._getSeek()

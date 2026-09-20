@@ -1,13 +1,13 @@
 {
-  "version": "2026.1-r23",
-  "build": 2026092001,
+  "version": "2026.1-r24",
+  "build": 2026092002,
   "channel": "test",
   "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r23/enigma2-plugin-extensions-mediaplugins2026_2026.1-r23_all.ipk",
   "sha256": "6fb9ce42f0ad6a815587906d6559866f271eb0ec3ab948511cdd50e8db7ef44d",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Rueckkehr vom Testkanal auf 2026.1-r23 stable",
+    "Wechsel vom alten Testkanal auf den aktuellen Stable-Stand",
     "Poster-Cache-Validierung repariert",
     "6-Stunden-Content-Refresh hinzugefuegt",
     "Funktionierenden Jellyfin-Client beibehalten"

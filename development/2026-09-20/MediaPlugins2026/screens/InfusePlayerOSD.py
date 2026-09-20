@@ -5,6 +5,7 @@
 # MEDIAPLUGINS2026_UNIFIED_VIDEO_PLAYER5
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX5_PANEL_POLISH
 # MEDIAPLUGINS2026_UNIFIED_OSD_FIX6_PANEL_ZORDER
+# MEDIAPLUGINS2026_UNIFIED_OSD_FIX7_BOTTOM_ALIGN
 
 from enigma import eTimer, iServiceInformation
 from Screens.Screen import Screen
@@ -33,7 +34,7 @@ class InfusePlayerOSD(Screen):
     UPDATE_MS = 1000
 
     skin = """
-    <screen name="InfusePlayerOSD" position="40,540" size="1840,500"
+    <screen name="InfusePlayerOSD" position="40,580" size="1840,500"
             flags="wfNoBorder" backgroundColor="#C0091622">
         <eLabel position="0,0" size="1840,2" backgroundColor="#18A7E0" zPosition="1" />
 

@@ -271,9 +271,29 @@ class InfuseMoviePlayer(MoviePlayer):
 
             self._stream_url = url
             self._last_ticks = ticks
+            self._resume_done = False
             self.session.nav.stopService()
             self.session.nav.playService(ref)
-            log.info("Jellyfin server seek: Neustart bei %.1fs", float(ticks) / 10000000.0)
+
+            # StartTimeTicks wird bei Direct-Play nicht von allen Jellyfin-
+            # Versionen/Containern als echter Byte-Seek umgesetzt. Nach dem
+            # Service-Neustart deshalb den normalen Enigma2-Seek erneut
+            # anwenden; der neu gestartete Service ist jetzt die frische
+            # Seek-Instanz.
+            def apply_after_restart():
+                try:
+                    new_seek = self._getSeek()
+                    if new_seek:
+                        result2 = new_seek.seekTo(self._ticksToPts(ticks))
+                        log.info("Jellyfin seek nach Service-Neustart: %.1fs result=%s",
+                                 float(ticks) / 10000000.0, result2)
+                except Exception as error:
+                    log.warning("Jellyfin seek nach Neustart fehlgeschlagen: %s", error)
+            self._resume_timer.stop()
+            self._resume_timer.callback[:] = []
+            self._resume_timer.callback.append(apply_after_restart)
+            self._resume_timer.start(1800, True)
+            log.info("Jellyfin server seek: Service-Neustart fuer %.1fs", float(ticks) / 10000000.0)
             return True
         except Exception as error:
             log.warning("Jellyfin server seek fehlgeschlagen: %s", error)

@@ -5,6 +5,9 @@
 from Screens.MessageBox import MessageBox
 from ..utils import log
 
+# Keep delayed player-start timers alive until they fire.
+_SAFE_PLAYER_START_TIMERS = []
+
 
 def _provider(item, client):
     value = str(getattr(item, "source_label", "") or "").strip().lower()
@@ -255,24 +258,47 @@ def _open_plex_embyflow(session, item, client, start_ticks, stream_url, service_
         info["start_ticks"] = int(start_ticks)
         info["position_ticks"] = int(start_ticks)
 
-    # Plex differs from Emby here: EmbyFlow normally owns the service start via
-    # its Emby-specific bootstrap.  A Plex item deliberately has no Emby
-    # server/token, so start the already-resolved Direct-Play reference first
-    # and then open the proven EmbyFlow OSD around that active service.
+    # Match the proven EmbyFlow lifecycle: stop the previous service, wait
+    # briefly for decoder/service teardown, then let EmbyFlowMoviePlayer start
+    # the 4097 reference itself.  Do NOT pre-start playService(ref) here:
+    # PlexEmbyFlowMoviePlayer deliberately calls the base player with
+    # prestarted=False, so pre-starting here would start the same stream twice
+    # and can cause decoder/service races and continuous stutter.
     try:
         session.nav.stopService()
     except Exception:
         pass
-    try:
-        session.nav.playService(ref)
-    except Exception as error:
-        raise RuntimeError("Plex Direct Play konnte nicht gestartet werden: %s" % error)
 
-    session.open(PlexEmbyFlowMoviePlayer, ref, title, info, old_ref, client, item)
-    _bridge_log(
-        "PLEX_EMBYFLOW_DIRECT1 playing+opened item=%s service=%s title=%r"
-        % (getattr(item, "id", ""), int(service_type or 4097), title)
-    )
+    from enigma import eTimer
+    start_timer = eTimer()
+    _SAFE_PLAYER_START_TIMERS.append(start_timer)
+
+    def open_after_stop():
+        try:
+            start_timer.stop()
+        except Exception:
+            pass
+        try:
+            _SAFE_PLAYER_START_TIMERS.remove(start_timer)
+        except Exception:
+            pass
+        try:
+            session.open(
+                PlexEmbyFlowMoviePlayer,
+                ref, title, info, old_ref, client, item
+            )
+            _bridge_log(
+                "PLEX_EMBYFLOW_SAFE1 opened item=%s service=%s title=%r"
+                % (getattr(item, "id", ""), int(service_type or 4097), title)
+            )
+        except Exception as error:
+            _show_error(session, _provider(item, client), error)
+
+    try:
+        start_timer.timeout.connect(open_after_stop)
+    except Exception:
+        start_timer.callback.append(open_after_stop)
+    start_timer.start(350, True)
     return True
 
 

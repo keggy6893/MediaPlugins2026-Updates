@@ -68,13 +68,6 @@ class InfuseMoviePlayer(MoviePlayer):
         self._report_timer.callback.append(self._reportProgress)
         self._osd_start_timer = eTimer()
         self._osd_start_timer.callback.append(self._showInfuseOSD)
-        # SEEK-EXT1: 4097 lehnt Direct-Play-Seeks auf dieser Box ab (-1).
-        # Beim ersten fehlgeschlagenen Seek wechseln wir nur den lokalen
-        # ServiceApp-Backend auf 5002 und behalten exakt dieselbe Stream-URL.
-        self._seek_ext_timer = eTimer()
-        self._seek_ext_target_pts = None
-        self._seek_ext_attempts = 0
-        self._seek_ext_timer.callback.append(self._applyExtSeek)
 
         # Hohe Prioritaet: OK soll unser OSD zeigen statt das Standard-MoviePlayer-OSD.
         self["infuse_osd_actions"] = ActionMap(
@@ -215,7 +208,7 @@ class InfuseMoviePlayer(MoviePlayer):
             return None
 
     def _seekSeconds(self, seconds):
-        """Seek; bei 4097/-1 auf lokalen ExtEplayer3-Service 5002 wechseln."""
+        """MediaPlugins2026 Seek auf dem bestehenden 4097-Service."""
         try:
             seek = self._getSeek()
             if not seek:
@@ -230,64 +223,11 @@ class InfuseMoviePlayer(MoviePlayer):
                     target = min(target, max(0, int(length) - 90000))
             except Exception:
                 pass
-
             result = seek.seekTo(target)
-            log.info("Player seek %ss: %s -> %s result=%s",
+            log.info("Player 4097 seek %ss: %s -> %s result=%s",
                      seconds, int(pos), target, result)
-            if result in (None, 0):
-                return
-
-            # EmbyFlow-Working-Fix: kein neuer Serverstream, kein StartTimeTicks.
-            # Nur denselben Static/Direct-Play-Stream lokal von 4097 auf
-            # ServiceApp/ExtEplayer3 (5002) umhaengen und danach seekTo retry.
-            if int(result) == -1:
-                self._switchToExtEplayer3(target)
         except Exception as error:
-            log.warning("Player seek %ss fehlgeschlagen: %s", seconds, error)
-
-    def _switchToExtEplayer3(self, target_pts):
-        try:
-            url = str(self._stream_url or "")
-            if not url:
-                return False
-            ref = eServiceReference(5002, 0, url)
-            try:
-                ref.setName(str(getattr(self._infuse_item, "title", "") or "MediaPlugins2026"))
-            except Exception:
-                pass
-            self._seek_ext_target_pts = max(0, int(target_pts or 0))
-            self._seek_ext_attempts = 0
-            self.session.nav.playService(ref)
-            self._seek_ext_timer.start(700, True)
-            log.info("Player SEEK-EXT1: 4097 -> 5002, gleiche URL, target=%s",
-                     self._seek_ext_target_pts)
-            return True
-        except Exception as error:
-            log.warning("Player SEEK-EXT1 Wechsel auf 5002 fehlgeschlagen: %s", error)
-            return False
-
-    def _applyExtSeek(self):
-        target = self._seek_ext_target_pts
-        if target is None:
-            return
-        self._seek_ext_attempts += 1
-        try:
-            seek = self._getSeek()
-            if seek:
-                result = seek.seekTo(int(target))
-                log.info("Player SEEK-EXT1 retry %s target=%s result=%s",
-                         self._seek_ext_attempts, target, result)
-                if result in (None, 0):
-                    self._seek_ext_target_pts = None
-                    self._seek_ext_attempts = 0
-                    return
-        except Exception as error:
-            log.warning("Player SEEK-EXT1 retry fehlgeschlagen: %s", error)
-        if self._seek_ext_attempts < 6:
-            self._seek_ext_timer.start(700, True)
-        else:
-            self._seek_ext_target_pts = None
-            self._seek_ext_attempts = 0
+            log.warning("Player 4097 seek %ss fehlgeschlagen: %s", seconds, error)
 
     def _getCurrentTicks(self):
         seek = self._getSeek()

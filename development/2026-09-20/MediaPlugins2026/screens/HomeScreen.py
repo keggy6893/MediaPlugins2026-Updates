@@ -994,6 +994,14 @@ class HomeScreen(Screen):
         log.safe_call(self.loadHome)
         self._scheduleContentRefresh6h()
 
+    def _contentRefreshStamp(self, event):
+        try:
+            from datetime import datetime
+            with open("/tmp/mediaplugins2026_content_refresh.log", "a", encoding="utf-8") as handle:
+                handle.write("%s | %s\n" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), event))
+        except Exception:
+            pass
+
     def _scheduleContentRefresh6h(self):
         try:
             self._content_refresh_timer.stop()
@@ -1001,6 +1009,7 @@ class HomeScreen(Screen):
             pass
         try:
             self._content_refresh_timer.start(6 * 60 * 60 * 1000, True)
+            self._contentRefreshStamp("TIMER STARTED | next refresh in 6h")
             log.info("Content-Refresh: naechste Film/Serien/Doku-Pruefung in 6 Stunden")
         except Exception as exc:
             log.warning("Content-Refresh Timer konnte nicht gestartet werden: %s", exc)
@@ -1008,9 +1017,14 @@ class HomeScreen(Screen):
     def _contentRefresh6h(self):
         # loadHome() fragt Emby/Jellyfin/Plex erneut ab und erneuert dabei
         # Home-Snapshot, Neu hinzugefuegt, Bibliotheken und Providerstatus.
+        self._contentRefreshStamp("REFRESH STARTED | films/series/docs | Emby/Jellyfin/Plex")
         log.info("Content-Refresh: 6h-Pruefung fuer Filme/Serien/Dokus gestartet")
         try:
             self.loadHome()
+            self._contentRefreshStamp("REFRESH DISPATCHED | loadHome called")
+        except Exception as exc:
+            self._contentRefreshStamp("REFRESH ERROR | %s" % exc)
+            raise
         finally:
             self._scheduleContentRefresh6h()
 

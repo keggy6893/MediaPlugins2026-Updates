@@ -181,7 +181,7 @@ class InfusePlayerOSD(Screen):
         self["dot_yellow"] = Label("●")
         self["key_blue"] = Label("Info")
         self["dot_blue"] = Label("●")
-        self["seekhint"] = Label("LEFT/RIGHT 5s   1/3 10s   4/6 30s   7/9 60s")
+        self["seekhint"] = Label("LEFT/RIGHT 5s   1/3 10s   4/6 30s   7/9 5min")
 
         self["provider_badge"] = Label(provider_label)
         self["mode"] = Label(self.playback.mode_label() if self.playback else "Stream")
@@ -211,8 +211,8 @@ class InfusePlayerOSD(Screen):
                 "3": lambda: self._seek(10),
                 "4": lambda: self._seek(-30),
                 "6": lambda: self._seek(30),
-                "7": lambda: self._seek(-60),
-                "9": lambda: self._seek(60),
+                "7": lambda: self._seek(-300),
+                "9": lambda: self._seek(300),
                 "red": self.keySubtitle,
                 "green": self.keyAudio,
                 "yellow": self.keyChapters,

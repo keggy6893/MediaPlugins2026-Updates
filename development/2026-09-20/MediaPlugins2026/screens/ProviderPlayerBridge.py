@@ -144,13 +144,11 @@ def _open_jellyfin(session, item, client, start_ticks):
 
 
 def _open_emby(session, item, client, start_ticks):
-    """Route Emby through the same MediaPlugins2026 unified 4097 player."""
+    """Emby through the same proven Bild-2 EmbyFlow-derived player UI."""
     try:
         url = client.get_stream_url(item.id, item)
-        return _open_unified(
-            session, item, client, "emby", url, start_ticks, 4097,
-            {"url_source": "MediaPlugins EmbyClient",
-             "playback_path": "native-unified"},
+        return _open_plex_embyflow(
+            session, item, client, start_ticks, url, 4097, None
         )
     except Exception as error:
         _show_error(session, "emby", error)

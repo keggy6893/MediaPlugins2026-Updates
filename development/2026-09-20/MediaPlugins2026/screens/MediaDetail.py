@@ -224,6 +224,10 @@ class MediaDetail(Screen):
 
     def _refreshAfterPlayer(self):
         log.info("Detail Resume-Refresh: %s", self.item.title)
+        # RESUME-LOCAL2: Player hat die Stop-Position bereits in demselben
+        # MediaItem hinterlegt. Sofort anzeigen; Server-Reload bleibt danach
+        # als Abgleich bestehen.
+        self._updatePlaybackLabels()
         self._loadFullDetail()
 
     def _onClose(self):

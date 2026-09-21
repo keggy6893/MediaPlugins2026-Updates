@@ -257,28 +257,24 @@ def _open_plex_embyflow(session, item, client, start_ticks, stream_url, service_
         info["start_ticks"] = int(start_ticks)
         info["position_ticks"] = int(start_ticks)
 
-    # Direct Enigma2 service lifecycle: start the 4097 service exactly once
-    # here, then open Bild-2 as a prestarted OSD/controller.  The player must
-    # not start the same HTTP service a second time.
-    try:
-        session.nav.playService(ref)
-    except Exception as error:
-        raise RuntimeError("4097 Direct-Play konnte nicht gestartet werden: %s" % error)
-
+    # Resume lifecycle fix: do NOT pre-start the 4097 service here.
+    # Let the proven Bild-2/EmbyFlow player start its own service so its normal
+    # startup path can apply playback_info[start_ticks] exactly once.
     try:
         session.open(
             PlexEmbyFlowMoviePlayer,
-            ref, title, info, old_ref, client, item, True
+            ref, title, info, old_ref, client, item, False
         )
         _bridge_log(
-            "PLEX_EMBYFLOW_DIRECT4097 opened item=%s service=%s title=%r"
-            % (getattr(item, "id", ""), int(service_type or 4097), title)
+            "PLEX_EMBYFLOW_PLAYERSTART_RESUME1 opened item=%s service=%s start_ticks=%s title=%r"
+            % (
+                getattr(item, "id", ""),
+                int(service_type or 4097),
+                int(start_ticks or 0),
+                title,
+            )
         )
     except Exception:
-        try:
-            session.nav.stopService()
-        except Exception:
-            pass
         raise
     return True
 

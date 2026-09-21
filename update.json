@@ -1,16 +1,16 @@
 {
-  "version": "2026.1-r26",
-  "build": 2026092102,
+  "version": "2026.1-r27",
+  "build": 2026092103,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r26/enigma2-plugin-extensions-mediaplugins2026_2026.1-r26_all.ipk",
-  "sha256": "f31d55bbf233a761f6664a5ec427c5d7fb916b821e41999282f5470da2619ca2",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r27/enigma2-plugin-extensions-mediaplugins2026_2026.1-r27_all.ipk",
+  "sha256": "e09c8164374265f7250a68e0a302824aa601f1a35ac89ef9a20a560ef0fc5b68",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Jellyfin Poster- und Grid-Bibliotheksansicht wiederhergestellt",
-    "Gemeinsamen Bild-2-Player fuer Jellyfin, Emby und Plex wiederhergestellt",
-    "Poster-Cache- und 6-Stunden-Refresh-Fixes beibehalten",
-    "Funktionierenden Jellyfin-Client beibehalten",
-    "Plex Login-Fallback und Plex2026 Credential Bridge beibehalten"
+    "Export und Wiederherstellung verwenden jetzt dieselbe persistente Backup-Datei",
+    "Manueller Export liegt dauerhaft unter /etc/enigma2 statt /tmp",
+    "Vorhandene Emby-, Jellyfin- und Plex-Zugaenge werden nur bei der Ersteinrichtung automatisch uebernommen",
+    "Bewusst geloeschte MediaPlugins-Server werden nicht mehr automatisch neu angelegt",
+    "Jellyfin Poster/Grid, Bild-2-Player, Posterfix, 6-Stunden-Refresh und Plex-Fixes aus r26 beibehalten"
   ]
 }

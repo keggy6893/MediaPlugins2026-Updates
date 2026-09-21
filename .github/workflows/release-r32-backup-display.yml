@@ -1,0 +1,97 @@
+name: Release MediaPlugins2026 r32 backup display
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/release-r32-backup-display.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build r32 from proven r31 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG=enigma2-plugin-extensions-mediaplugins2026
+          OLD="${PKG}_2026.1-r31_all.ipk"
+          NEW="${PKG}_2026.1-r32_all.ipk"
+          FIX="development/2026-09-20/MediaPlugins2026/screens/BackupScreen.py"
+
+          test -f "$OLD"
+          test -f "$FIX"
+          ! grep -Fq 'unter /tmp' "$FIX"
+          grep -Fq 'BACKUP_PATH, AUTO_BACKUP_KEEP' "$FIX"
+
+          mkdir -p build/ar build/control build/rootfs
+          cd build/ar
+          ar x "../../$OLD"
+          tar -xzf control.tar.gz -C ../control
+          tar -xzf data.tar.gz -C ../rootfs
+          cd ../..
+
+          DEST="build/rootfs/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026/screens/BackupScreen.py"
+          cp "$FIX" "$DEST"
+
+          sed -i 's/^Version: 2026\.1-r31$/Version: 2026.1-r32/' build/control/control
+          grep -qx 'Version: 2026.1-r32' build/control/control
+          ! grep -Fq 'unter /tmp' "$DEST"
+          grep -Fq 'BACKUP_PATH, AUTO_BACKUP_KEEP' "$DEST"
+          python3 -m py_compile "$DEST"
+
+          tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          tar --owner=0 --group=0 -czf build/data.tar.gz -C build/rootfs .
+          printf '2.0\n' > build/debian-binary
+          cd build
+          ar r "../$NEW" debian-binary control.tar.gz data.tar.gz
+          cd ..
+
+          SHA="$(sha256sum "$NEW" | awk '{print $1}')"
+          echo "R32_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "R32_FILE=$NEW" >> "$GITHUB_ENV"
+
+      - name: Create r32 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release delete 2026.1-r32 --yes >/dev/null 2>&1 || true
+          gh release create 2026.1-r32 "$R32_FILE" \
+            --title "Media Plugins 2026.1-r32" \
+            --notes "Anzeige im Backup-Menü korrigiert: GELB zeigt jetzt den tatsächlich verwendeten persistenten Exportpfad an. Backup-/Restore-Logik bleibt unverändert auf r31-Basis."
+
+      - name: Publish stable updater manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          p = "update.json"
+          with open(p, "r", encoding="utf-8") as f:
+              d = json.load(f)
+          d["version"] = "2026.1-r32"
+          d["build"] = 2026092108
+          d["download"] = "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r32/enigma2-plugin-extensions-mediaplugins2026_2026.1-r32_all.ipk"
+          d["sha256"] = os.environ["R32_SHA"]
+          d["changelog"] = [
+              "Anzeige des manuellen Exportpfads im Backup-Menue korrigiert",
+              "GELB zeigt jetzt den tatsaechlich verwendeten persistenten Backup-Pfad",
+              "Backup- und Restore-Logik unveraendert auf r31-Basis"
+          ]
+          with open(p, "w", encoding="utf-8") as f:
+              json.dump(d, f, indent=2, ensure_ascii=True)
+              f.write("\n")
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json
+          git commit -m "Publish MediaPlugins2026 r32 backup display fix"
+          git push

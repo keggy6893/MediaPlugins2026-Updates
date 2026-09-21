@@ -1,14 +1,14 @@
 {
-  "version": "2026.1-r29",
-  "build": 2026092105,
+  "version": "2026.1-r30",
+  "build": 2026092106,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r29/enigma2-plugin-extensions-mediaplugins2026_2026.1-r29_all.ipk",
-  "sha256": "ed1237f444d9cde3fd8bf758f94e80577e212e703c7de7152cb2070fee1595c1",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r30/enigma2-plugin-extensions-mediaplugins2026_2026.1-r30_all.ipk",
+  "sha256": "a1189007e458c57c743a8a4bbae9a131a7b689865c0a69288304397b924c66af",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Fortsetzen: Player uebernimmt den 4097-Service-Start wieder selbst",
-    "Doppelten Vorab-Start des Wiedergabe-Service entfernt",
-    "Bild-2-Player und alle Fixes aus r28 beibehalten"
+    "Bibliotheks-Theme wieder vollstaendig im IPK enthalten",
+    "45 vorhandene library_theme-Assets inklusive farbiger dynamischer Kacheln",
+    "Pagination sowie Server- und Playback-Code bleiben auf r29-Basis unveraendert"
   ]
 }

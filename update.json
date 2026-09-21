@@ -1,14 +1,14 @@
 {
-  "version": "2026.1-r30",
-  "build": 2026092106,
+  "version": "2026.1-r31",
+  "build": 2026092107,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r30/enigma2-plugin-extensions-mediaplugins2026_2026.1-r30_all.ipk",
-  "sha256": "8493f04b51a139352280e8b8e9f543f231833a55bda72a02b9adae31549a2a8c",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r31/enigma2-plugin-extensions-mediaplugins2026_2026.1-r31_all.ipk",
+  "sha256": "c8734f91a58edd9b94933e367530b58fe2044a5ebea33a3f2e0bc40e10ec9282",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Bibliotheks-Theme wieder vollstaendig im IPK enthalten",
-    "45 vorhandene library_theme-Assets inklusive farbiger dynamischer Kacheln",
-    "Pagination sowie Server- und Playback-Code bleiben auf r29-Basis unveraendert"
+    "Backup- und Restore-Pfad fuer manuellen Export korrigiert",
+    "Export und Import verwenden persistent /etc/enigma2/mediaplugins2026_unified_backup.json",
+    "Sonst unveraendert auf r30-Basis"
   ]
 }

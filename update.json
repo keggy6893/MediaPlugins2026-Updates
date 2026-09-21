@@ -1,14 +1,14 @@
 {
-  "version": "2026.1-r31",
-  "build": 2026092107,
+  "version": "2026.1-r32",
+  "build": 2026092108,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r31/enigma2-plugin-extensions-mediaplugins2026_2026.1-r31_all.ipk",
-  "sha256": "c8734f91a58edd9b94933e367530b58fe2044a5ebea33a3f2e0bc40e10ec9282",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r32/enigma2-plugin-extensions-mediaplugins2026_2026.1-r32_all.ipk",
+  "sha256": "8992cca2c2a021973d09b1e2fb603e6f6fdb676cfae6c2cbd644ed7904222328",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Backup- und Restore-Pfad fuer manuellen Export korrigiert",
-    "Export und Import verwenden persistent /etc/enigma2/mediaplugins2026_unified_backup.json",
-    "Sonst unveraendert auf r30-Basis"
+    "Anzeige des manuellen Exportpfads im Backup-Menue korrigiert",
+    "GELB zeigt jetzt den tatsaechlich verwendeten persistenten Backup-Pfad",
+    "Backup- und Restore-Logik unveraendert auf r31-Basis"
   ]
 }

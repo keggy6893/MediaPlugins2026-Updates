@@ -1,16 +1,16 @@
 {
-  "version": "2026.1-r27",
-  "build": 2026092103,
+  "version": "2026.1-r28",
+  "build": 2026092104,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r27/enigma2-plugin-extensions-mediaplugins2026_2026.1-r27_all.ipk",
-  "sha256": "e09c8164374265f7250a68e0a302824aa601f1a35ac89ef9a20a560ef0fc5b68",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r28/enigma2-plugin-extensions-mediaplugins2026_2026.1-r28_all.ipk",
+  "sha256": "ba79421240bd6cfe1cb412ba1f95e390e9fb1561bc084442794bd8acf0ee04fe",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Export und Wiederherstellung verwenden jetzt dieselbe persistente Backup-Datei",
-    "Manueller Export liegt dauerhaft unter /etc/enigma2 statt /tmp",
-    "Vorhandene Emby-, Jellyfin- und Plex-Zugaenge werden nur bei der Ersteinrichtung automatisch uebernommen",
-    "Bewusst geloeschte MediaPlugins-Server werden nicht mehr automatisch neu angelegt",
-    "Jellyfin Poster/Grid, Bild-2-Player, Posterfix, 6-Stunden-Refresh und Plex-Fixes aus r26 beibehalten"
+    "Jellyfin-Fortsetzen in der Detailansicht wiederhergestellt",
+    "Bibliothek, Suche und aehnliche Titel laden UserData und RunTimeTicks explizit",
+    "PlaybackPositionTicks wird wieder als Fortsetzungsposition in der Detailansicht verwendet",
+    "Backup-/Restore- und einmaliger Credential-Import-Fix aus r27 beibehalten",
+    "Jellyfin Poster/Grid, Bild-2-Player, Posterfix, 6-Stunden-Refresh und Plex-Fixes beibehalten"
   ]
 }

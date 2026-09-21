@@ -1,16 +1,14 @@
 {
-  "version": "2026.1-r28",
-  "build": 2026092104,
+  "version": "2026.1-r29",
+  "build": 2026092105,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r28/enigma2-plugin-extensions-mediaplugins2026_2026.1-r28_all.ipk",
-  "sha256": "ba79421240bd6cfe1cb412ba1f95e390e9fb1561bc084442794bd8acf0ee04fe",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r29/enigma2-plugin-extensions-mediaplugins2026_2026.1-r29_all.ipk",
+  "sha256": "ed1237f444d9cde3fd8bf758f94e80577e212e703c7de7152cb2070fee1595c1",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Jellyfin-Fortsetzen in der Detailansicht wiederhergestellt",
-    "Bibliothek, Suche und aehnliche Titel laden UserData und RunTimeTicks explizit",
-    "PlaybackPositionTicks wird wieder als Fortsetzungsposition in der Detailansicht verwendet",
-    "Backup-/Restore- und einmaliger Credential-Import-Fix aus r27 beibehalten",
-    "Jellyfin Poster/Grid, Bild-2-Player, Posterfix, 6-Stunden-Refresh und Plex-Fixes beibehalten"
+    "Fortsetzen: Player uebernimmt den 4097-Service-Start wieder selbst",
+    "Doppelten Vorab-Start des Wiedergabe-Service entfernt",
+    "Bild-2-Player und alle Fixes aus r28 beibehalten"
   ]
 }

@@ -1,0 +1,98 @@
+name: Release MediaPlugins2026 r30 library theme
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/release-r30-library-theme.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build r30 from proven r29 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG=enigma2-plugin-extensions-mediaplugins2026
+          OLD="${PKG}_2026.1-r29_all.ipk"
+          NEW="${PKG}_2026.1-r30_all.ipk"
+          THEME="development/2026-09-20/MediaPlugins2026/skin/library_theme"
+
+          test -f "$OLD"
+          test -d "$THEME"
+          test "$(find "$THEME" -maxdepth 1 -type f | wc -l)" -eq 45
+
+          mkdir -p build/ar build/control build/rootfs
+          cd build/ar
+          ar x "../../$OLD"
+          tar -xzf control.tar.gz -C ../control
+          tar -xzf data.tar.gz -C ../rootfs
+          cd ../..
+
+          DEST="build/rootfs/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026/skin/library_theme"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp -a "$THEME"/. "$DEST"/
+
+          sed -i 's/^Version: 2026\.1-r29$/Version: 2026.1-r30/' build/control/control
+          grep -qx 'Version: 2026.1-r30' build/control/control
+          test "$(find "$DEST" -maxdepth 1 -type f | wc -l)" -eq 45
+
+          python3 -m py_compile build/rootfs/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026/screens/ServerFolderBrowser.py
+
+          tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          tar --owner=0 --group=0 -czf build/data.tar.gz -C build/rootfs .
+          printf '2.0\n' > build/debian-binary
+          cd build
+          ar r "../$NEW" debian-binary control.tar.gz data.tar.gz
+          cd ..
+
+          SHA="$(sha256sum "$NEW" | awk '{print $1}')"
+          echo "R30_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "R30_FILE=$NEW" >> "$GITHUB_ENV"
+
+      - name: Create r30 release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release delete 2026.1-r30 --yes >/dev/null 2>&1 || true
+          gh release create 2026.1-r30 "$R30_FILE" \
+            --title "Media Plugins 2026.1-r30" \
+            --notes "Bibliotheks-Theme repariert: die 45 vorhandenen library_theme-Assets sind wieder im IPK enthalten. Pagination und Server-/Playback-Code bleiben auf r29-Basis unverändert."
+
+      - name: Publish stable updater manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          p = "update.json"
+          with open(p, "r", encoding="utf-8") as f:
+              d = json.load(f)
+          d["version"] = "2026.1-r30"
+          d["build"] = 2026092106
+          d["download"] = "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r30/enigma2-plugin-extensions-mediaplugins2026_2026.1-r30_all.ipk"
+          d["sha256"] = os.environ["R30_SHA"]
+          d["changelog"] = [
+              "Bibliotheks-Theme wieder vollstaendig im IPK enthalten",
+              "45 vorhandene library_theme-Assets inklusive farbiger dynamischer Kacheln",
+              "Pagination sowie Server- und Playback-Code bleiben auf r29-Basis unveraendert"
+          ]
+          with open(p, "w", encoding="utf-8") as f:
+              json.dump(d, f, indent=2, ensure_ascii=True)
+              f.write("\n")
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json
+          git commit -m "Publish MediaPlugins2026 r30 library theme"
+          git push

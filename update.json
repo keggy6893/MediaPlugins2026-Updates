@@ -3,7 +3,7 @@
   "build": 2026092106,
   "channel": "stable",
   "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r30/enigma2-plugin-extensions-mediaplugins2026_2026.1-r30_all.ipk",
-  "sha256": "a1189007e458c57c743a8a4bbae9a131a7b689865c0a69288304397b924c66af",
+  "sha256": "8493f04b51a139352280e8b8e9f543f231833a55bda72a02b9adae31549a2a8c",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [

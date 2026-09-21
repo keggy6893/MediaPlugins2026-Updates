@@ -16,6 +16,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build r32 from proven r31 package
+        env:
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
@@ -24,6 +26,7 @@ jobs:
           NEW="${PKG}_2026.1-r32_all.ipk"
           FIX="development/2026-09-20/MediaPlugins2026/screens/BackupScreen.py"
 
+          gh release download 2026.1-r31 --pattern "$OLD" --clobber
           test -f "$OLD"
           test -f "$FIX"
           ! grep -Fq 'unter /tmp' "$FIX"

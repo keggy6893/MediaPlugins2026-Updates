@@ -77,9 +77,9 @@ class MediaPluginsBackupScreen(Screen):
         self["title"] = Label("Sicherung & Wiederherstellung")
         self["body"] = Label(
             "GRÜN aktualisiert die heutige interne Sicherung sofort.\n"
-            "GELB erstellt eine manuelle Exportdatei unter /tmp.\n"
+            "GELB erstellt eine manuelle Exportdatei unter %s.\n"
             "BLAU stellt diese Exportdatei wieder her.\n\n"
-            "Automatische Sicherung: täglich · %d Tage Verlauf" % AUTO_BACKUP_KEEP
+            "Automatische Sicherung: täglich · %d Tage Verlauf" % (BACKUP_PATH, AUTO_BACKUP_KEEP)
         )
         self["status"] = Label(self._backup_status())
 

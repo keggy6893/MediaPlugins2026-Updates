@@ -7,7 +7,7 @@ from .utils import log
 
 CONFIG_PATH = "/etc/enigma2/mediaplugins2026_unified.json"
 LEGACY_CONFIG_PATH = "/etc/enigma2/infusemedia2026.json"
-BACKUP_PATH = "/tmp/mediaplugins2026_unified_backup.json"
+BACKUP_PATH = "/etc/enigma2/mediaplugins2026_unified_backup.json"
 
 
 def _obfuscate(password):

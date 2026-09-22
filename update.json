@@ -1,14 +1,14 @@
 {
-  "version": "2026.1-r32",
-  "build": 2026092108,
+  "version": "2026.1-r33",
+  "build": 2026092201,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r32/enigma2-plugin-extensions-mediaplugins2026_2026.1-r32_all.ipk",
-  "sha256": "8992cca2c2a021973d09b1e2fb603e6f6fdb676cfae6c2cbd644ed7904222328",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r33/enigma2-plugin-extensions-mediaplugins2026_2026.1-r33_all.ipk",
+  "sha256": "41baff7557d0f09bfd2409c17b1dbe65f07c8a595468de72fbc3e753bc1cad07",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Anzeige des manuellen Exportpfads im Backup-Menue korrigiert",
-    "GELB zeigt jetzt den tatsaechlich verwendeten persistenten Backup-Pfad",
-    "Backup- und Restore-Logik unveraendert auf r31-Basis"
+    "Jellyfin A-Z-Buchstabenfilter korrigiert",
+    "JellyfinClient.get_items akzeptiert jetzt name_starts_with",
+    "NameStartsWith wird korrekt an die Jellyfin-API uebergeben"
   ]
 }

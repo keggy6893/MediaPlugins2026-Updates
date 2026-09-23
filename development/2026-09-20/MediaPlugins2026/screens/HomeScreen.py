@@ -690,8 +690,8 @@ def _build_skin():
         '<widget name="continue_label" position="48,96" size="430,34" font="Regular;28" foregroundColor="#f4f6f8" transparent="1" />',
         '<widget name="continue_empty" position="1180,103" size="690,24" font="Regular;14" foregroundColor="#667585" transparent="1" halign="right" />',
 
-        '<widget name="favorites_panel" position="28,410" size="902,345" backgroundColor="#0b1823" transparent="0" zPosition="0" />',
-        '<widget name="latest_panel" position="955,410" size="937,345" backgroundColor="#0b1823" transparent="0" zPosition="0" />',
+        '<widget name="favorites_panel" position="28,410" size="902,345" backgroundColor="#0b1823" transparent="1" zPosition="0" />',
+        '<widget name="latest_panel" position="955,410" size="937,345" backgroundColor="#0b1823" transparent="1" zPosition="0" />',
         '<widget name="favorites_label" position="48,423" size="220,42" font="Regular;28" foregroundColor="#f4f6f8" transparent="1" zPosition="2" />',
         '<widget name="latest_label" position="980,423" size="255,42" font="Regular;28" foregroundColor="#f4f6f8" transparent="1" zPosition="2" />',
 

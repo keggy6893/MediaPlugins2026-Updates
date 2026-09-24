@@ -98,7 +98,7 @@ def _legacy_deobfuscate(stored):
         return ""
 
 
-def _candidate(protocol, values, source, password_is_obfuscated=False):
+def _candidate(protocol, values, source, secrets_are_obfuscated=False):
     if protocol not in PROVIDERS:
         return None
     address = _first(values, _ADDRESS_KEYS)
@@ -109,8 +109,11 @@ def _candidate(protocol, values, source, password_is_obfuscated=False):
     password = _first(values, _PASSWORD_KEYS)
     token = _first(values, _TOKEN_KEYS)
     user_id = _first(values, _USER_ID_KEYS)
-    if password_is_obfuscated and password:
-        password = _legacy_deobfuscate(password)
+    if secrets_are_obfuscated:
+        if password:
+            password = _legacy_deobfuscate(password) or password
+        if token:
+            token = _legacy_deobfuscate(token) or token
 
     # Plex needs a token (or an explicitly open LAN PMS).  We do not import a
     # totally anonymous generic Plex-looking setting because it is too easy to
@@ -227,7 +230,7 @@ def _legacy_infuse_candidates(path):
         if not isinstance(raw, dict):
             continue
         provider = _text(raw.get("protocol")).lower()
-        cand = _candidate(provider, raw, "legacy-infuse:%s" % path, password_is_obfuscated=True)
+        cand = _candidate(provider, raw, "legacy-infuse:%s" % path, secrets_are_obfuscated=True)
         if cand:
             result.append(cand)
     return result

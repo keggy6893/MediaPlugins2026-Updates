@@ -449,7 +449,11 @@ class PlexClient(MediaServerClient):
                   latest_done, latest_failed)
 
     def get_items(self, library_id, callback, error_callback,
-                  start_index=0, limit=50, sort_by="SortName"):
+                  start_index=0, limit=50, sort_by="SortName",
+                  name_starts_with=None, name_less_than=None):
+        # Die A-Z-Parameter werden vom gemeinsamen LibraryBrowser uebergeben.
+        # Plex verwendet hier weiterhin seine bestehende serverseitige
+        # Pagination; die Parameter werden bewusst nur kompatibel akzeptiert.
         url = ("%s/library/sections/%s/all?X-Plex-Container-Start=%d&X-Plex-Container-Size=%d"
                % (self._build_base_url(), library_id, int(start_index), int(limit)))
 

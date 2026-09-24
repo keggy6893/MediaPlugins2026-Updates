@@ -343,9 +343,19 @@ class ConfigStore(object):
                     source_match.username = raw.get("username")
                 if raw.get("password"):
                     source_match.password = raw.get("password")
-                if raw.get("token"):
-                    source_match.token = raw.get("token")
-                if raw.get("user_id"):
+
+                # Einen von MediaPlugins nach erfolgreicher Re-Authentifizierung
+                # gespeicherten Token nicht bei jedem Start wieder mit dem
+                # moeglicherweise veralteten Token der Importquelle ueberschreiben.
+                # Token-only-Quellen bleiben dagegen autoritativ, weil dort kein
+                # Passwort-Fallback moeglich ist.
+                imported_token = raw.get("token")
+                has_password_fallback = bool(raw.get("username") and raw.get("password"))
+                if imported_token and (not source_match.token or not has_password_fallback):
+                    source_match.token = imported_token
+                    if raw.get("user_id"):
+                        source_match.user_id = raw.get("user_id")
+                elif raw.get("user_id") and not source_match.user_id:
                     source_match.user_id = raw.get("user_id")
                 self._save()
                 existing.add(self._server_key(source_match))

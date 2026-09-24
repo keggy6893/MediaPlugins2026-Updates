@@ -9,7 +9,14 @@ class MediaServerClient(object):
                  https="auto", path="", library_mode=False, token="", user_id=""):
         self.server_name = name
         self.address = (address or "").strip()
-        self.port = int(port) if str(port or "").strip() else None
+        try:
+            self.port = int(str(port).strip()) if str(port or "").strip() else None
+            if self.port is not None and not (1 <= self.port <= 65535):
+                self.port = None
+        except (TypeError, ValueError):
+            # Importierte Alt-/Fremdkonfigurationen duerfen den Client nicht
+            # schon beim Erzeugen mit einem ungueltigen Port abschiessen.
+            self.port = None
         self.username = username
         self.password = password
         self.https = https          # "auto" | "on" | "off"
@@ -82,10 +89,15 @@ class MediaServerClient(object):
             return []
 
         has_scheme = "://" in raw
-        parsed = urlsplit(raw if has_scheme else "//" + raw)
-        host = parsed.hostname or raw.split("/")[0].split(":")[0]
-        embedded_port = parsed.port
-        embedded_path = (parsed.path or "").strip("/")
+        try:
+            parsed = urlsplit(raw if has_scheme else "//" + raw)
+            host = parsed.hostname or raw.split("/")[0].split(":")[0]
+            embedded_port = parsed.port
+            embedded_path = (parsed.path or "").strip("/")
+        except ValueError:
+            # Ungueltige eingebettete Ports/URLs aus importierten Configs
+            # kontrolliert ablehnen statt den Enigma2-Aufrufpfad zu crashen.
+            return []
 
         port = embedded_port if embedded_port is not None else self.port
         path = self.path.strip("/") or embedded_path

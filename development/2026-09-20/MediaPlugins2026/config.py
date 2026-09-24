@@ -322,6 +322,28 @@ class ConfigStore(object):
                 continue
 
             if key in existing:
+                # Derselbe Provider+Endpoint kann ueber mehrere Scanner
+                # gefunden werden. Wenn der vorhandene Eintrag noch keine
+                # Importquelle bzw. Zugangsdaten hat, fehlende Werte ergaenzen,
+                # statt einen zweiten Server anzulegen oder brauchbare Daten
+                # kommentarlos zu verwerfen.
+                endpoint_match = None
+                for existing_server in self.servers:
+                    if self._server_key(existing_server) == key:
+                        endpoint_match = existing_server
+                        break
+                if endpoint_match is not None:
+                    endpoint_changed = False
+                    for attr in ("username", "password", "token", "user_id"):
+                        value = raw.get(attr, "")
+                        if value and not getattr(endpoint_match, attr, ""):
+                            setattr(endpoint_match, attr, value)
+                            endpoint_changed = True
+                    if source and not getattr(endpoint_match, "imported_from", ""):
+                        endpoint_match.imported_from = source
+                        endpoint_changed = True
+                    if endpoint_changed:
+                        self._save()
                 continue
             server = ServerConfig(
                 name=self._unique_name(raw.get("name") or (protocol.capitalize() + " · uebernommen")),

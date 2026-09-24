@@ -451,11 +451,25 @@ class PlexClient(MediaServerClient):
     def get_items(self, library_id, callback, error_callback,
                   start_index=0, limit=50, sort_by="SortName",
                   name_starts_with=None, name_less_than=None):
-        # Die A-Z-Parameter werden vom gemeinsamen LibraryBrowser uebergeben.
-        # Plex verwendet hier weiterhin seine bestehende serverseitige
-        # Pagination; die Parameter werden bewusst nur kompatibel akzeptiert.
-        url = ("%s/library/sections/%s/all?X-Plex-Container-Start=%d&X-Plex-Container-Size=%d"
-               % (self._build_base_url(), library_id, int(start_index), int(limit)))
+        # Plex unterstuetzt serverseitige Library-Filter. Dadurch bleiben
+        # A-Z/0-9 und Pagination auch bei grossen Bibliotheken konsistent.
+        params = [
+            "X-Plex-Container-Start=%d" % int(start_index),
+            "X-Plex-Container-Size=%d" % int(limit),
+            "sort=titleSort",
+        ]
+        if name_starts_with not in (None, ""):
+            prefix = str(name_starts_with)
+            # Bereich [B,C) statt clientseitig eine einzelne Seite zu filtern.
+            # Z hat keinen sinnvollen ASCII-Nachfolger als Buchstabenfilter;
+            # dort reicht die untere Grenze und die Sortierung.
+            params.append("titleSort>>=%s" % quote(prefix))
+            if len(prefix) == 1 and "A" <= prefix.upper() < "Z":
+                params.append("titleSort<<%s" % quote(chr(ord(prefix.upper()) + 1)))
+        if name_less_than not in (None, ""):
+            params.append("titleSort<<%s" % quote(str(name_less_than)))
+        url = ("%s/library/sections/%s/all?%s"
+               % (self._build_base_url(), library_id, "&".join(params)))
 
         def done(data):
             try:

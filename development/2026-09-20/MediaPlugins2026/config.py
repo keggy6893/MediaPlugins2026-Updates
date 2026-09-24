@@ -63,6 +63,17 @@ class ServerConfig(object):
     @classmethod
     def from_dict(cls, d):
         d = dict(d or {})
+
+        def decode_secret(value):
+            # Aktuelle Configs speichern Secrets XOR/base64-obfuskiert. Alte
+            # Builds/Backups konnten jedoch Klartext enthalten. Ein nicht in
+            # unserem Format decodierbarer Wert darf deshalb nicht lautlos zu
+            # einem leeren Passwort/Token werden.
+            if not value:
+                return ""
+            decoded = _deobfuscate(value)
+            return decoded if decoded else str(value)
+
         # Backward compatible with r1-r7 and tolerant of future extra keys.
         return cls(
             name=d.get("name", ""),
@@ -70,11 +81,11 @@ class ServerConfig(object):
             address=d.get("address", ""),
             port=d.get("port", ""),
             username=d.get("username", ""),
-            password=_deobfuscate(d.get("password", "")),
+            password=decode_secret(d.get("password", "")),
             https=d.get("https", "auto"),
             path=d.get("path", ""),
             library_mode=bool(d.get("library_mode", False)),
-            token=_deobfuscate(d.get("token", "")),
+            token=decode_secret(d.get("token", "")),
             user_id=d.get("user_id", ""),
             imported_from=d.get("imported_from", ""),
         )

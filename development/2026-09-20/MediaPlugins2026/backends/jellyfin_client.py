@@ -49,14 +49,12 @@ class JellyfinClient(MediaServerClient):
             error_callback("Keine gueltige Serveradresse")
             return
 
-        # r8: bestehende Tokens aus einem bereits eingerichteten Einzelplugin
-        # direkt verwenden. Mit bekannter User-ID ist keine erneute Passwort-
-        # Anmeldung notwendig. Fehlt die ID, ermitteln wir sie ueber /Users/Me.
-        if self.token and self.user_id:
-            self._active_base_url = candidates[0]
-            callback(self.token, self.user_id)
-            return
-
+        # Importierte Tokens immer serverseitig validieren. Eine gespeicherte
+        # User-ID beweist nicht, dass der Token noch gueltig ist; andernfalls
+        # faellt ein abgelaufener Token erst bei Home/Libraries/Favorites mit
+        # HTTP 401 auf. /Users/Me validiert den Token und liefert zugleich die
+        # aktuelle User-ID. Bei Fehlschlag nutzt der bestehende Ablauf das
+        # Passwort als Fallback, sofern eines vorhanden ist.
         if self.token:
             token_errors = []
 

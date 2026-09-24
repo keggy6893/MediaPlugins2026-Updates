@@ -252,6 +252,7 @@ def _json_file_candidates(path, provider_hint=""):
         return []
 
     result = []
+    by_endpoint = {}
     provider_hint = provider_hint or _provider_from_text(os.path.basename(path))
     for raw in _walk_dicts(data):
         provider = _text(raw.get("protocol") or raw.get("provider")).lower()
@@ -260,8 +261,31 @@ def _json_file_candidates(path, provider_hint=""):
         if provider not in PROVIDERS:
             continue
         cand = _candidate(provider, raw, "json:%s" % path)
-        if cand:
+        if not cand:
+            continue
+
+        # Verschachtelte JSON-Konfigurationen koennen denselben Server in
+        # mehreren Teilobjekten enthalten (z.B. Endpoint getrennt von einem
+        # vollstaendigeren Account-/Serverobjekt). Innerhalb EINER Datei
+        # deshalb nur Provider+Endpoint zusammenfuehren. Verschiedene Plex-
+        # Endpoints mit gemeinsamem Account-Token bleiben bewusst getrennt.
+        endpoint_key = (
+            cand.get("protocol", "").lower(),
+            cand.get("address", "").rstrip("/").lower(),
+        )
+        current = by_endpoint.get(endpoint_key)
+        if current is None:
+            by_endpoint[endpoint_key] = cand
             result.append(cand)
+            continue
+
+        for field in ("username", "password", "token", "user_id", "port", "path"):
+            if not current.get(field) and cand.get(field):
+                current[field] = cand.get(field)
+        if current.get("https", "auto") == "auto" and cand.get("https") in ("on", "off"):
+            current["https"] = cand.get("https")
+        if (not current.get("name") or current.get("name", "").endswith("· übernommen")) and cand.get("name"):
+            current["name"] = cand.get("name")
     return result
 
 

@@ -722,16 +722,22 @@ class LibraryBrowser(Screen):
             start_index, PAGE_SIZE, letter or "ALLE"
         )
 
-        self.client.get_items(
-            self.library_id,
-            lambda media, total, req=request, target_letter=letter, last=select_last:
-                self._onServerPageLoaded(media, total, req, target_letter, last),
-            lambda err, req=request: self._onServerPageError(err, req),
-            start_index=start_index,
-            limit=PAGE_SIZE,
-            sort_by="SortName",
-            **kwargs
-        )
+        try:
+            self.client.get_items(
+                self.library_id,
+                lambda media, total, req=request, target_letter=letter, last=select_last:
+                    self._onServerPageLoaded(media, total, req, target_letter, last),
+                lambda err, req=request: self._onServerPageError(err, req),
+                start_index=start_index,
+                limit=PAGE_SIZE,
+                sort_by="SortName",
+                **kwargs
+            )
+        except TypeError as exc:
+            # Ein Backend mit alter/abweichender Signatur darf beim A-Z-
+            # Wechsel nicht Enigma2 mitreissen. Der Fehler bleibt sichtbar,
+            # statt als synchroner Python-Crash aus dem Screen zu laufen.
+            self._onServerPageError(str(exc), request)
 
     def _onServerPageLoaded(self, media, server_total, request, letter, select_last=False):
         if self._closing or request != self._library_request:

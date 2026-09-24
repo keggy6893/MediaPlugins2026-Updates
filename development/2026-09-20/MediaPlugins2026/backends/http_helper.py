@@ -80,6 +80,7 @@ class HttpHelper(object):
             d2 = readBody(response)
             d2.addCallback(on_body)
             d2.addErrback(on_error)
+            return d2
 
         def on_body(body_bytes):
             if callback:
@@ -87,6 +88,8 @@ class HttpHelper(object):
                     callback(body_bytes.decode("utf-8"))
                 except Exception as e:
                     log.exception("Fehler im Callback fuer %s: %s", _safe_log_url(url), e)
+                    if error_callback:
+                        error_callback(str(e))
 
         def on_error(failure):
             log.warning("Netzwerkfehler bei %s: %s", _safe_log_url(url), failure.getErrorMessage())

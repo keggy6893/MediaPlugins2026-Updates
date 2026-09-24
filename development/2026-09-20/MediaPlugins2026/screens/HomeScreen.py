@@ -1587,6 +1587,19 @@ class HomeScreen(Screen):
         log.warning("TIMING HOME +%.3fs %s %s FAIL in %.3fs: %s", now - self._timing_load_started, server_cfg.name, request_name, now - started, err)
         self._pipelineTiming("SUBREQ_FAIL", "server=%r name=%s request_ms=%.1f error=%r" % (server_cfg.name, request_name, (now - started) * 1000.0, str(err)))
         log.warning("MediaWall %s fuer %s fehlgeschlagen: %s", request_name, server_cfg.name, err)
+
+        # Ein erfolgreicher Login bedeutet nicht, dass der Server waehrend
+        # der nachfolgenden Requests weiterhin erreichbar bzw. autorisiert ist.
+        state = self._classifyServerFailure(err)
+        if state in ("offline", "auth"):
+            self.server_status[server_cfg.name] = state
+            log.warning(
+                "Server %s nach %s-Fehler status=%s: %s",
+                server_cfg.name, request_name, state, err
+            )
+            self._renderStatus()
+            self._renderServerSwitch()
+
         self._subRequestFinished(server_cfg)
 
     def _subRequestFinished(self, server_cfg):

@@ -179,12 +179,21 @@ class ConfigStore(object):
         backup_dir = os.path.dirname(path)
         if backup_dir and not os.path.isdir(backup_dir):
             os.makedirs(backup_dir)
-        with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+        temp_path = path + ".tmp"
         try:
-            os.chmod(path, 0o600)
+            with open(temp_path, "w") as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(temp_path, 0o600)
+            os.replace(temp_path, path)
         except Exception:
-            pass
+            try:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+            except Exception:
+                pass
+            raise
         log.info("Konfiguration exportiert: %s (%d Server)", path, len(self.servers))
         return path
 

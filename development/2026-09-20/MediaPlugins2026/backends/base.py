@@ -29,7 +29,8 @@ class MediaServerClient(object):
         raise NotImplementedError
 
     def get_items(self, library_id, callback, error_callback,
-                  start_index=0, limit=50, sort_by="SortName"):
+                  start_index=0, limit=50, sort_by="SortName",
+                  name_starts_with=None, name_less_than=None):
         raise NotImplementedError
 
     def get_item_detail(self, item_id, callback, error_callback):

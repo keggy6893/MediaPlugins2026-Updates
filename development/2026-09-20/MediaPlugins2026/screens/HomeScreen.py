@@ -1127,6 +1127,11 @@ class HomeScreen(Screen):
         from ..config import get_configured_servers, config_store
         from ..backends.factory import create_client_for_server
 
+        # Asynchrone Antworten eines vorherigen Home-Laufs koennen nach einem
+        # Reload noch eintreffen. Eine Generation trennt die Laeufe sauber.
+        self._home_load_generation = getattr(self, "_home_load_generation", 0) + 1
+        load_generation = self._home_load_generation
+
         self.sections = []
         self.continue_items = []
         self.latest_items = []
@@ -1213,8 +1218,10 @@ class HomeScreen(Screen):
             self._pipelineTiming("LOGIN_START", "server=%r provider=%s" % (server_cfg.name, getattr(server_cfg, "protocol", "?")))
             log.info("TIMING HOME +%.3fs %s LOGIN start protocol=%s", time.monotonic() - self._timing_load_started, server_cfg.name, getattr(server_cfg, "protocol", "?"))
             client.login(
-                lambda token, uid, s=server_cfg, c=client: log.safe_call(self._onLogin, s, c),
-                lambda err, s=server_cfg: log.safe_call(self._onServerError, s, err),
+                lambda token, uid, s=server_cfg, c=client, g=load_generation:
+                    log.safe_call(self._onLogin, s, c) if g == self._home_load_generation else None,
+                lambda err, s=server_cfg, g=load_generation:
+                    log.safe_call(self._onServerError, s, err) if g == self._home_load_generation else None,
             )
         self._renderStatus()
 
@@ -1244,24 +1251,33 @@ class HomeScreen(Screen):
         self._timing_sub_started[(server_cfg.name, "Favorites")] = time.monotonic()
         log.info("TIMING HOME +%.3fs %s subrequests START Home,Libraries,Favorites", time.monotonic() - self._timing_load_started, server_cfg.name)
         self._pipelineTiming("SUBREQ_START", "server=%r names=Home,Libraries,Favorites" % server_cfg.name)
+        generation = self._home_load_generation
         client.get_home_sections(
-            lambda sections, s=server_cfg: log.safe_call(self._onSectionsLoaded, s, sections),
-            lambda err, s=server_cfg: log.safe_call(self._onSubRequestError, s, "Home", err),
+            lambda sections, s=server_cfg, g=generation:
+                log.safe_call(self._onSectionsLoaded, s, sections) if g == self._home_load_generation else None,
+            lambda err, s=server_cfg, g=generation:
+                log.safe_call(self._onSubRequestError, s, "Home", err) if g == self._home_load_generation else None,
         )
         client.get_libraries(
-            lambda libs, s=server_cfg, c=client: log.safe_call(self._onLibrariesLoaded, s, c, libs),
-            lambda err, s=server_cfg: log.safe_call(self._onSubRequestError, s, "Libraries", err),
+            lambda libs, s=server_cfg, c=client, g=generation:
+                log.safe_call(self._onLibrariesLoaded, s, c, libs) if g == self._home_load_generation else None,
+            lambda err, s=server_cfg, g=generation:
+                log.safe_call(self._onSubRequestError, s, "Libraries", err) if g == self._home_load_generation else None,
         )
         try:
             client.get_favorites(
-                lambda items, s=server_cfg: log.safe_call(self._onFavoritesLoaded, s, items),
-                lambda err, s=server_cfg: log.safe_call(self._onSubRequestError, s, "Favorites", err),
+                lambda items, s=server_cfg, g=generation:
+                    log.safe_call(self._onFavoritesLoaded, s, items) if g == self._home_load_generation else None,
+                lambda err, s=server_cfg, g=generation:
+                    log.safe_call(self._onSubRequestError, s, "Favorites", err) if g == self._home_load_generation else None,
                 limit=300,
             )
         except TypeError:
             client.get_favorites(
-                lambda items, s=server_cfg: log.safe_call(self._onFavoritesLoaded, s, items),
-                lambda err, s=server_cfg: log.safe_call(self._onSubRequestError, s, "Favorites", err),
+                lambda items, s=server_cfg, g=generation:
+                    log.safe_call(self._onFavoritesLoaded, s, items) if g == self._home_load_generation else None,
+                lambda err, s=server_cfg, g=generation:
+                    log.safe_call(self._onSubRequestError, s, "Favorites", err) if g == self._home_load_generation else None,
             )
         except Exception as e:
             self._onSubRequestError(server_cfg, "Favorites", str(e))

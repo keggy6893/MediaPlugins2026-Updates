@@ -1,14 +1,21 @@
 {
-  "version": "2026.1-r33",
-  "build": 2026092201,
+  "version": "2026.1-r35",
+  "build": 2026092402,
   "channel": "stable",
-  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r33/enigma2-plugin-extensions-mediaplugins2026_2026.1-r33_all.ipk",
-  "sha256": "41baff7557d0f09bfd2409c17b1dbe65f07c8a595468de72fbc3e753bc1cad07",
+  "download": "https://github.com/keggy6893/MediaPlugins2026-Updates/releases/download/2026.1-r35/enigma2-plugin-extensions-mediaplugins2026_2026.1-r35_all.ipk",
+  "sha256": "0858cab7850e9fa420d9b06d688ea0470c1b75d1af89061c00635db620e2cc06",
   "artifact_type": "ipk",
   "package": "enigma2-plugin-extensions-mediaplugins2026",
   "changelog": [
-    "Jellyfin A-Z-Buchstabenfilter korrigiert",
-    "JellyfinClient.get_items akzeptiert jetzt name_starts_with",
-    "NameStartsWith wird korrekt an die Jellyfin-API uebergeben"
+    "Emby/Jellyfin Anmeldung und Token-Validierung korrigiert",
+    "Providerstatus bei Auth- und Offline-Fehlern korrigiert",
+    "A-Z- und 0-9-Filter fuer Emby/Jellyfin abgesichert",
+    "Plex A-Z/0-9-Filter und gemeinsame Browser-Schnittstelle abgesichert",
+    "Poster-404 wird nicht erneut angefordert",
+    "Credential-Import und Legacy-Zugangsdaten gehaertet",
+    "Konfiguration und Backups werden atomar geschrieben",
+    "HTTP-Body- und Callback-Fehler werden korrekt weitergereicht",
+    "Veraltete HomeScreen-Callbacks werden ignoriert",
+    "Updater verhindert Downgrades auf kleinere Release-Revisionen"
   ]
 }

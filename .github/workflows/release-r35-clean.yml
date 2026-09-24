@@ -1,0 +1,189 @@
+name: Release MediaPlugins2026 r35 clean
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/release-r35-clean.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      VERSION: 2026.1-r35
+      BUILD: '2026092402'
+      PACKAGE: enigma2-plugin-extensions-mediaplugins2026
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build r35 from stable r33 plus verified source fixes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          OLD="${PACKAGE}_2026.1-r33_all.ipk"
+          OUT="${PACKAGE}_${VERSION}_all.ipk"
+          SRC="development/2026-09-20/MediaPlugins2026"
+          ROOT="$PWD/build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+
+          gh release download 2026.1-r33 --pattern "$OLD" --clobber
+          test -s "$OLD"
+
+          rm -rf build verify
+          mkdir -p build/work build/control build/data
+          (cd build/work && ar x "../../$OLD")
+          tar -xzf build/work/control.tar.gz -C build/control
+          tar -xzf build/work/data.tar.gz -C build/data
+          test -f "$ROOT/plugin.py"
+
+          FILES=(
+            config.py
+            backends/base.py
+            backends/emby_client.py
+            backends/jellyfin_client.py
+            backends/plex_client.py
+            backends/http_helper.py
+            screens/HomeScreen.py
+            screens/LibraryBrowser.py
+            screens/UpdateScreen.py
+            utils/credential_bridge.py
+            utils/image_cache.py
+            utils/config_backup.py
+          )
+          for f in "${FILES[@]}"; do
+            test -f "$SRC/$f"
+            install -D -m 0644 "$SRC/$f" "$ROOT/$f"
+          done
+
+          cp "$SRC/version.py" "$ROOT/version.py"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os, re
+          root=Path("build/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026")
+          p=root/"version.py"
+          s=p.read_text(encoding="utf-8")
+          s,n1=re.subn(r'PLUGIN_VERSION\s*=\s*"[^"]+"', 'PLUGIN_VERSION = "'+os.environ["VERSION"]+'"', s, count=1)
+          s,n2=re.subn(r'PLUGIN_UPDATE_BUILD\s*=\s*\d+', 'PLUGIN_UPDATE_BUILD = '+os.environ["BUILD"], s, count=1)
+          s,n3=re.subn(r'PLUGIN_UPDATE_CHANNEL\s*=\s*"[^"]+"', 'PLUGIN_UPDATE_CHANNEL = "stable"', s, count=1)
+          if (n1,n2,n3)!=(1,1,1): raise SystemExit("version.py metadata replacement failed")
+          if "update.json" not in s or "update-test.json" in s: raise SystemExit("wrong updater manifest in version.py")
+          p.write_text(s,encoding="utf-8")
+          c=Path("build/control/control")
+          cs=c.read_text(encoding="utf-8")
+          cs,n=re.subn(r'(?m)^Version:\s*\S+', 'Version: '+os.environ["VERSION"], cs, count=1)
+          if n!=1: raise SystemExit("control version replacement failed")
+          c.write_text(cs,encoding="utf-8")
+          checked=0
+          for py in root.rglob("*.py"):
+            compile(py.read_text(encoding="utf-8"),str(py),"exec")
+            checked+=1
+          if checked < 40: raise SystemExit("unexpectedly incomplete Python tree")
+          print("compiled",checked,"Python files")
+          PY
+
+          find "$ROOT" -type f \( -name '*.pyc' -o -name '*.bak' -o -name '*.before_*' -o -name '*~' \) -delete
+          find "$ROOT" -type d -name '__pycache__' -prune -exec rm -rf {} +
+
+          grep -q 'name_less_than=None' "$ROOT/backends/jellyfin_client.py"
+          grep -q 'NameLessThan' "$ROOT/backends/jellyfin_client.py"
+          grep -q 'name_less_than' "$ROOT/screens/LibraryBrowser.py"
+          grep -q '_should_retry' "$ROOT/utils/image_cache.py"
+          grep -q '_home_load_generation' "$ROOT/screens/HomeScreen.py"
+          grep -q 'has_password_fallback' "$ROOT/config.py"
+          grep -q 'return d2' "$ROOT/backends/http_helper.py"
+          grep -q '_is_remote_newer' "$ROOT/screens/UpdateScreen.py"
+          grep -q 'PLUGIN_VERSION = "2026.1-r35"' "$ROOT/version.py"
+          grep -q 'PLUGIN_UPDATE_CHANNEL = "stable"' "$ROOT/version.py"
+          ! grep -q 'update-test.json' "$ROOT/version.py"
+
+          printf '2.0\n' > build/debian-binary
+          GZIP=-n tar --owner=0 --group=0 -czf build/control.tar.gz -C build/control .
+          GZIP=-n tar --owner=0 --group=0 -czf build/data.tar.gz -C build/data .
+          ar r "$OUT" build/debian-binary build/control.tar.gz build/data.tar.gz
+          SHA="$(sha256sum "$OUT" | awk '{print $1}')"
+          echo "R35_SHA=$SHA" >> "$GITHUB_ENV"
+          echo "R35_FILE=$OUT" >> "$GITHUB_ENV"
+
+      - name: Independent package verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p verify/control verify/data verify/ar
+          (cd verify/ar && ar x "../../$R35_FILE")
+          tar -xzf verify/ar/control.tar.gz -C verify/control
+          tar -xzf verify/ar/data.tar.gz -C verify/data
+          ROOT="verify/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026"
+          grep -qx 'Package: enigma2-plugin-extensions-mediaplugins2026' verify/control/control
+          grep -qx 'Version: 2026.1-r35' verify/control/control
+          grep -q 'PLUGIN_VERSION = "2026.1-r35"' "$ROOT/version.py"
+          grep -q 'PLUGIN_UPDATE_BUILD = 2026092402' "$ROOT/version.py"
+          grep -q 'PLUGIN_UPDATE_CHANNEL = "stable"' "$ROOT/version.py"
+          grep -q 'update.json' "$ROOT/version.py"
+          ! grep -q 'update-test.json' "$ROOT/version.py"
+          grep -q 'NameLessThan' "$ROOT/backends/jellyfin_client.py"
+          grep -q '_is_remote_newer' "$ROOT/screens/UpdateScreen.py"
+          grep -q '_home_load_generation' "$ROOT/screens/HomeScreen.py"
+          grep -q 'has_password_fallback' "$ROOT/config.py"
+          grep -q 'return d2' "$ROOT/backends/http_helper.py"
+          test -z "$(find "$ROOT" -type f -name '*.pyc' -print -quit)"
+          test -z "$(find "$ROOT" -type d -name '__pycache__' -print -quit)"
+          python3 - <<'PY'
+          from pathlib import Path
+          root=Path("verify/data/usr/lib/enigma2/python/Plugins/Extensions/MediaPlugins2026")
+          n=0
+          for p in root.rglob("*.py"):
+              compile(p.read_text(encoding="utf-8"),str(p),"exec"); n+=1
+          if n < 40: raise SystemExit("incomplete package")
+          print("second compile pass",n)
+          PY
+          echo "$R35_SHA  $R35_FILE" | sha256sum -c -
+
+      - name: Publish release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSION" "$R35_FILE" --title "Media Plugins 2026 — $VERSION" --notes "Stabiler Sammelrelease der am 24.09.2026 geprüften Git-Fixes: Auth/Token, Providerstatus, A-Z/0-9, Poster-404, Credential-Import, atomare Konfiguration/Backups, HTTP-Fehlerweitergabe, HomeScreen-Callback-Schutz und Updater-Downgrade-Schutz."
+
+      - name: Publish stable manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          d={
+            "version":os.environ["VERSION"],
+            "build":int(os.environ["BUILD"]),
+            "channel":"stable",
+            "download":f"https://github.com/{os.environ['GITHUB_REPOSITORY']}/releases/download/{os.environ['VERSION']}/{os.environ['R35_FILE']}",
+            "sha256":os.environ["R35_SHA"],
+            "artifact_type":"ipk",
+            "package":os.environ["PACKAGE"],
+            "changelog":[
+              "Emby/Jellyfin Anmeldung und Token-Validierung korrigiert",
+              "Providerstatus bei Auth- und Offline-Fehlern korrigiert",
+              "A-Z- und 0-9-Filter fuer Emby/Jellyfin abgesichert",
+              "Plex A-Z/0-9-Filter und gemeinsame Browser-Schnittstelle abgesichert",
+              "Poster-404 wird nicht erneut angefordert",
+              "Credential-Import und Legacy-Zugangsdaten gehaertet",
+              "Konfiguration und Backups werden atomar geschrieben",
+              "HTTP-Body- und Callback-Fehler werden korrekt weitergereicht",
+              "Veraltete HomeScreen-Callbacks werden ignoriert",
+              "Updater verhindert Downgrades auf kleinere Release-Revisionen"
+            ]
+          }
+          Path("update.json").write_text(json.dumps(d,indent=2,ensure_ascii=True)+"\n",encoding="utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add update.json
+          git commit -m "Publish MediaPlugins2026 r35 stable"
+          git push

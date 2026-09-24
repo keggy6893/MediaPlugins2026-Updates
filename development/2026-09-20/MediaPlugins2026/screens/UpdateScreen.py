@@ -218,6 +218,22 @@ def _normalize_manifest(raw):
     }
 
 
+def _version_revision(value):
+    """Return numeric r-revision for MediaPlugins versions, or None."""
+    match = re.search(r"(?:^|[-_.])r(\d+)(?:$|[-_.])", str(value or "").strip(), re.I)
+    return int(match.group(1)) if match else None
+
+
+def _is_remote_newer(remote_version, remote_build):
+    """Never offer an older r-revision merely because its build number is higher."""
+    local_revision = _version_revision(PLUGIN_VERSION)
+    remote_revision = _version_revision(remote_version)
+    if local_revision is not None and remote_revision is not None:
+        if remote_revision != local_revision:
+            return remote_revision > local_revision
+    return int(remote_build or 0) > int(PLUGIN_UPDATE_BUILD)
+
+
 def _fetch_manifest():
     separator = "&" if "?" in PLUGIN_UPDATE_MANIFEST_URL else "?"
     url = PLUGIN_UPDATE_MANIFEST_URL + separator + "_mediaplugins_ts=%d" % int(time.time())
@@ -640,7 +656,7 @@ class MediaPluginsUpdateScreen(Screen):
         self._refresh_timestamps()
         remote_build = int(self._manifest.get("build") or 0)
         remote_version = str(self._manifest.get("version") or "-")
-        self._update_available_flag = remote_build > int(PLUGIN_UPDATE_BUILD)
+        self._update_available_flag = _is_remote_newer(remote_version, remote_build)
         self._installable = bool(self._manifest.get("installable"))
         self["update_available"].setText(remote_version)
         self["update_channel"].setText(
@@ -653,7 +669,16 @@ class MediaPluginsUpdateScreen(Screen):
         )
         if not self._update_available_flag:
             self["state_title"].setText("Aktuell")
-            if remote_build < int(PLUGIN_UPDATE_BUILD):
+            local_revision = _version_revision(PLUGIN_VERSION)
+            remote_revision = _version_revision(remote_version)
+            local_is_newer = (
+                local_revision is not None and remote_revision is not None and
+                local_revision > remote_revision
+            ) or (
+                (local_revision is None or remote_revision is None or local_revision == remote_revision) and
+                remote_build < int(PLUGIN_UPDATE_BUILD)
+            )
+            if local_is_newer:
                 self["update_status"].setText(
                     "✓ Du hast bereits eine neuere Version installiert."
                 )

@@ -305,6 +305,14 @@ class ConfigStore(object):
                     source_match.port = raw.get("port", "")
                     source_match.path = raw.get("path", "")
                     source_match.https = raw.get("https", "auto")
+                # Dieselbe bekannte Importquelle darf ihre kopierten
+                # Zugangsdaten aktualisieren. So kann nach einem abgelaufenen
+                # Token der Passwort-Fallback mit den aktuellen Credentials
+                # arbeiten, ohne die Fremdkonfiguration selbst zu veraendern.
+                if raw.get("username"):
+                    source_match.username = raw.get("username")
+                if raw.get("password"):
+                    source_match.password = raw.get("password")
                 if raw.get("token"):
                     source_match.token = raw.get("token")
                 if raw.get("user_id"):

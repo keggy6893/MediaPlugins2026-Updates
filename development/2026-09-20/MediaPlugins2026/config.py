@@ -149,13 +149,23 @@ class ConfigStore(object):
             "servers": [s.to_dict() for s in self.servers],
             "favorites": [f.to_dict() for f in self.favorites],
         }
+        temp_path = CONFIG_PATH + ".tmp"
         try:
             conf_dir = os.path.dirname(CONFIG_PATH)
             if not os.path.isdir(conf_dir):
                 os.makedirs(conf_dir)
-            with open(CONFIG_PATH, "w") as f:
+            with open(temp_path, "w") as f:
                 json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(temp_path, 0o600)
+            os.replace(temp_path, CONFIG_PATH)
         except Exception as e:
+            try:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+            except Exception:
+                pass
             log.exception("Config konnte nicht gespeichert werden: %s", e)
 
     def export_backup(self, path=BACKUP_PATH):
